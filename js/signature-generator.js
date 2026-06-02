@@ -9,6 +9,8 @@
 
 const SignatureGenerator = (() => {
 
+  let currentHoverStyles = [];
+
   /* ─── Template registry ──────────────────────────────────────── */
 
   const TEMPLATES = {
@@ -39,19 +41,47 @@ const SignatureGenerator = (() => {
   }
 
   /* ─── Build social icons HTML row ────────────────────────────── */
-  function buildSocialIcons(data, showIcons, accentColor) {
+  function buildSocialIcons(data, options, accentColor) {
+    const showIcons = typeof options === 'object' ? options.showIcons : options;
     if (!showIcons) return '';
     const links = [];
+
+    const colorMode = (options && options.socialIconColorMode) ? options.socialIconColorMode : 'brand';
+    const shape = (options && options.socialIconShape) ? options.socialIconShape : 'circle';
+    const customColor = (options && options.socialIconCustomColor) ? options.socialIconCustomColor : accentColor;
+
+    const borderRadius = shape === 'circle' ? '50%' : (shape === 'rounded' ? '4px' : '0px');
+    
+    const hoverStyles = [];
 
     const add = (key, url) => {
       const icon = SOCIAL_ICONS[key];
       if (!url || !icon) return;
       const href = Utils.normaliseUrl(url);
-      const bg   = key === 'calendly' ? accentColor : icon.color;
-      links.push(`<a href="${href}" target="_blank" rel="noopener" title="${icon.label}" style="display:inline-block;margin-right:5px;text-decoration:none;">
-  <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background-color:${bg};">
-    <img src="${svgToDataUri(icon.svg)}" width="13" height="13" alt="${icon.label}" style="display:block;" />
-  </span>
+
+      // Normal state background color
+      let bg = icon.color;
+      if (colorMode === 'accent') {
+        bg = accentColor;
+      } else if (colorMode === 'custom') {
+        bg = customColor;
+      } else if (options && options[`socialColor_${key}`]) {
+        bg = options[`socialColor_${key}`];
+      } else if (key === 'calendly') {
+        bg = accentColor;
+      }
+
+      // Hover state background color
+      let hoverBg = Utils.adjustColor(bg, -30); // Default hover is slightly darker
+      if (options && options[`socialHover_${key}`]) {
+        hoverBg = options[`socialHover_${key}`];
+      }
+
+      const uniqueClass = `ef-social-${key}`;
+      hoverStyles.push(`.${uniqueClass}:hover { background-color: ${hoverBg} !important; }`);
+
+      links.push(`<a href="${href}" class="${uniqueClass}" target="_blank" rel="noopener" title="${icon.label}" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:${borderRadius};background-color:${bg};margin-right:5px;text-decoration:none;transition:background-color 150ms ease-in-out;">
+  <img src="${svgToDataUri(icon.svg)}" width="13" height="13" alt="${icon.label}" style="display:block;" />
 </a>`);
     };
 
@@ -65,6 +95,11 @@ const SignatureGenerator = (() => {
     add('whatsapp',  data.whatsapp);
 
     if (!links.length) return '';
+    
+    if (hoverStyles.length) {
+      currentHoverStyles.push(...hoverStyles);
+    }
+      
     return `<tr><td style="padding-top:10px;">${links.join('')}</td></tr>`;
   }
 
@@ -79,27 +114,113 @@ const SignatureGenerator = (() => {
     return lines.join(' | ');
   }
 
-  /* ─── Contact row helper (icon + label) ──────────────────────── */
-  function contactLine(svgPath, value, href, fontSize) {
-    if (!value) return '';
-    const linkStart = href ? `<a href="${href}" style="color:inherit;text-decoration:none;">` : '';
-    const linkEnd   = href ? '</a>' : '';
-    return `<tr>
-  <td style="padding:1px 0;font-size:${fontSize}px;color:#888;line-height:1.5;white-space:nowrap;">
-    ${linkStart}${Utils.escapeHtml(value)}${linkEnd}
-  </td>
-</tr>`;
-  }
-
   /* ─── Avatar cell ────────────────────────────────────────────── */
-  function avatarCell(data, size = 60, shape = 'circle') {
-    if (!data.avatar || !data.showAvatar) return '';
-    const radius = shape === 'circle' ? '50%' : '8px';
-    return `<td style="padding-right:16px;vertical-align:top;">
+  function avatarCell(data, options, defaultSize = 60, defaultShape = 'circle', defaultBorder = '') {
+    const showAvatar = options ? options.showAvatar : data.showAvatar;
+    if (!data.avatar || !showAvatar) return '';
+
+    const size = (options && options.avatarSize) ? options.avatarSize : defaultSize;
+    const shape = (options && options.avatarShape) ? options.avatarShape : defaultShape;
+    const radius = shape === 'circle' ? '50%' : (shape === 'rounded' ? '8px' : '0px');
+
+    const spacingTop = (options && options.avatarSpacingTop !== undefined) ? options.avatarSpacingTop : 0;
+    
+    const borderWidth = (options && options.avatarBorderWidth !== undefined) ? options.avatarBorderWidth : null;
+    const borderColor = (options && options.avatarBorderColor) ? options.avatarBorderColor : (options ? options.accentColor : '#6366f1');
+    
+    let borderStyle = defaultBorder;
+    if (borderWidth !== null) {
+      borderStyle = borderWidth > 0 ? `border:${borderWidth}px solid ${borderColor};` : '';
+    }
+
+    return `<td style="padding-right:16px;padding-top:${spacingTop}px;vertical-align:top;">
   <img src="${data.avatar}" width="${size}" height="${size}"
        alt="${Utils.escapeHtml(data.firstName || 'Avatar')}"
-       style="width:${size}px;height:${size}px;border-radius:${radius};object-fit:cover;display:block;" />
+       style="width:${size}px;height:${size}px;border-radius:${radius};object-fit:cover;display:block;${borderStyle}" />
 </td>`;
+  }
+
+  /* ─── Left column cell (Stacks Avatar and Logo vertically if placement = 'photo') ─── */
+  function leftColumnCell(data, options, defaultSize = 60, defaultShape = 'circle', defaultBorder = '') {
+    const showAvatar = options ? options.showAvatar : data.showAvatar;
+    const showLogo = options ? options.showLogo : false;
+    const hasAvatar = data.avatar && showAvatar;
+    const hasLogo = data.logo && showLogo && options && options.logoPlacement === 'photo';
+
+    if (!hasAvatar && !hasLogo) return '';
+
+    const spacingTop = (options && options.avatarSpacingTop !== undefined) ? options.avatarSpacingTop : 0;
+
+    // Fallback to standard avatar cell if no logo placed under photo
+    if (!hasLogo) {
+      return avatarCell(data, options, defaultSize, defaultShape, defaultBorder);
+    }
+
+    // Stack both vertically using nested table
+    const size = (options && options.avatarSize) ? options.avatarSize : defaultSize;
+    const shape = (options && options.avatarShape) ? options.avatarShape : defaultShape;
+    const radius = shape === 'circle' ? '50%' : (shape === 'rounded' ? '8px' : '0px');
+    
+    const borderWidth = (options && options.avatarBorderWidth !== undefined) ? options.avatarBorderWidth : null;
+    const borderColor = (options && options.avatarBorderColor) ? options.avatarBorderColor : (options ? options.accentColor : '#6366f1');
+    
+    let borderStyle = defaultBorder;
+    if (borderWidth !== null) {
+      borderStyle = borderWidth > 0 ? `border:${borderWidth}px solid ${borderColor};` : '';
+    }
+
+    const logoSize = options.logoSize || 60;
+    const logoShape = options.logoShape || 'square';
+    const logoRadius = logoShape === 'circle' ? '50%' : (logoShape === 'rounded' ? '6px' : '0px');
+    const logoSpacing = options.logoSpacing !== undefined ? options.logoSpacing : 10;
+
+    return `<td style="padding-right:16px;padding-top:${spacingTop}px;vertical-align:top;" align="center">
+  <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+    <tbody>
+      ${hasAvatar ? `<tr>
+        <td style="padding-bottom:${logoSpacing}px;vertical-align:top;" align="center">
+          <img src="${data.avatar}" width="${size}" height="${size}"
+               alt="${Utils.escapeHtml(data.firstName || 'Avatar')}"
+               style="width:${size}px;height:${size}px;border-radius:${radius};object-fit:cover;display:block;margin:0 auto;${borderStyle}" />
+        </td>
+      </tr>` : ''}
+      <tr>
+        <td style="vertical-align:top;" align="center">
+          ${data.logoUrl ? `<a href="${Utils.normaliseUrl(data.logoUrl)}" target="_blank" rel="noopener" style="text-decoration:none;display:block;">` : ''}
+          <img src="${data.logo}" width="${logoSize}"
+               alt="${Utils.escapeHtml(data.company || 'Logo')}"
+               style="width:${logoSize}px;height:auto;max-height:${logoSize}px;border-radius:${logoRadius};display:block;margin:0 auto;" />
+          ${data.logoUrl ? `</a>` : ''}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</td>`;
+  }
+
+  /* ─── Logo row (Bottom details list placement) ────────────────── */
+  function logoRow(data, options, templateId) {
+    if (!data.logo || !options || !options.showLogo) return '';
+    
+    // Only bypass if position is 'photo' and template has a left column structure
+    if (options.logoPlacement === 'photo' && ['minimal', 'executive', 'corporate', 'luxury'].includes(templateId)) {
+      return '';
+    }
+
+    const size = options.logoSize || 60;
+    const shape = options.logoShape || 'square';
+    const radius = shape === 'circle' ? '50%' : (shape === 'rounded' ? '6px' : '0px');
+    const logoSpacing = options.logoSpacing !== undefined ? options.logoSpacing : 10;
+
+    return `<tr>
+  <td style="padding-top:${logoSpacing}px;padding-bottom:2px;vertical-align:top;">
+    ${data.logoUrl ? `<a href="${Utils.normaliseUrl(data.logoUrl)}" target="_blank" rel="noopener" style="text-decoration:none;display:block;">` : ''}
+    <img src="${data.logo}" width="${size}"
+         alt="${Utils.escapeHtml(data.company || 'Logo')}"
+         style="width:${size}px;height:auto;max-height:${size}px;border-radius:${radius};display:block;" />
+    ${data.logoUrl ? `</a>` : ''}
+  </td>
+</tr>`;
   }
 
   /* ─── Full name helper ───────────────────────────────────────── */
@@ -116,70 +237,84 @@ const SignatureGenerator = (() => {
   function renderMinimal(data, options) {
     const { accentColor, fontSize, fontFamily, showDivider, showTagline } = options;
     const name = fullName(data);
-    const social = buildSocialIcons(data, options.showIcons, accentColor);
+    const social = buildSocialIcons(data, options, accentColor);
     const divider = showDivider
       ? `<tr><td style="padding:10px 0 8px;"><div style="width:40px;height:2px;background:${accentColor};"></div></td></tr>`
       : `<tr><td style="padding-top:10px;"></td></tr>`;
 
-    return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:${fontFamily};font-size:${fontSize}px;color:#333333;line-height:1.5;max-width:500px;">
+    const cName = options.colorName || '#111111';
+    const cJob = options.colorJobTitle || accentColor;
+    const cCompany = options.colorCompany || '#666666';
+    const cContact = options.colorContact || '#666666';
+    const cTagline = options.colorTagline || '#999999';
+
+    return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:${fontFamily};font-size:${fontSize}px;color:${cContact};line-height:1.5;max-width:500px;">
   <tbody>
     <tr>
-      ${avatarCell(data, 52, 'circle')}
+      ${leftColumnCell(data, options, 52, 'circle', '')}
       <td style="vertical-align:top;">
         <table cellpadding="0" cellspacing="0" border="0" width="100%">
           <tbody>
             ${divider}
             <tr>
-              <td style="font-size:${fontSize + 3}px;font-weight:700;color:#111111;padding-bottom:1px;white-space:nowrap;">
+              <td style="font-size:${fontSize + 3}px;font-weight:700;color:${cName};padding-bottom:1px;white-space:nowrap;">
                 ${Utils.escapeHtml(name)}
               </td>
             </tr>
-            ${data.jobTitle ? `<tr><td style="font-size:${fontSize}px;color:${accentColor};font-weight:500;padding-bottom:4px;">${Utils.escapeHtml(data.jobTitle)}${data.company ? ` · <span style="color:#666;">${Utils.escapeHtml(data.company)}</span>` : ''}</td></tr>` : ''}
-            ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:#999;font-style:italic;padding-bottom:6px;">${Utils.escapeHtml(data.tagline)}</td></tr>` : ''}
-            ${data.email ? `<tr><td style="font-size:${fontSize - 1}px;color:#666;"><a href="mailto:${data.email}" style="color:${accentColor};text-decoration:none;">${Utils.escapeHtml(data.email)}</a>${data.phone ? ` &nbsp;·&nbsp; <a href="tel:${data.phone}" style="color:#666;text-decoration:none;">${Utils.escapeHtml(data.phone)}</a>` : ''}</td></tr>` : ''}
-            ${data.website ? `<tr><td style="font-size:${fontSize - 1}px;padding-top:2px;"><a href="${Utils.normaliseUrl(data.website)}" style="color:${accentColor};text-decoration:none;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a></td></tr>` : ''}
+            ${data.jobTitle ? `<tr><td style="font-size:${fontSize}px;color:${cJob};font-weight:500;padding-bottom:4px;">${Utils.escapeHtml(data.jobTitle)}${data.company ? ` · <span style="color:${cCompany};">${Utils.escapeHtml(data.company)}</span>` : ''}</td></tr>` : ''}
+            ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:${cTagline};font-style:italic;padding-bottom:6px;">${Utils.escapeHtml(data.tagline)}</td></tr>` : ''}
+            ${data.email ? `<tr><td style="font-size:${fontSize - 1}px;color:${cContact};"><a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.email)}</a>${data.phone ? ` &nbsp;·&nbsp; <a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.phone)}</a>` : ''}</td></tr>` : ''}
+            ${data.website ? `<tr><td style="font-size:${fontSize - 1}px;padding-top:2px;"><a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a></td></tr>` : ''}
             ${social}
+            ${logoRow(data, options, 'minimal')}
           </tbody>
         </table>
       </td>
     </tr>
   </tbody>
-</table>`;
+ </table>`;
   }
 
   /* ── 2. EXECUTIVE ────────────────────────────────────────────── */
   function renderExecutive(data, options) {
     const { accentColor, fontSize, fontFamily, showDivider, showTagline } = options;
     const name = fullName(data);
-    const social = buildSocialIcons(data, options.showIcons, accentColor);
+    const social = buildSocialIcons(data, options, accentColor);
 
-    return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:${fontFamily};font-size:${fontSize}px;color:#222;max-width:520px;">
+    const cName = options.colorName || '#111111';
+    const cJob = options.colorJobTitle || accentColor;
+    const cCompany = options.colorCompany || '#555555';
+    const cContact = options.colorContact || '#666666';
+    const cTagline = options.colorTagline || '#999999';
+
+    return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:${fontFamily};font-size:${fontSize}px;color:${cContact};max-width:520px;">
   <tbody>
     <tr>
-      ${avatarCell(data, 70, 'square')}
+      ${leftColumnCell(data, options, 70, 'square', '')}
       <td style="vertical-align:top;border-left:3px solid ${accentColor};padding-left:16px;">
-        <table cellpadding="0" cellspacing="0" border="0">
+         <table cellpadding="0" cellspacing="0" border="0">
           <tbody>
             <tr>
-              <td style="font-size:${fontSize + 5}px;font-weight:800;color:#111;letter-spacing:-0.3px;line-height:1.2;padding-bottom:2px;">
+              <td style="font-size:${fontSize + 5}px;font-weight:800;color:${cName};letter-spacing:-0.3px;line-height:1.2;padding-bottom:2px;">
                 ${Utils.escapeHtml(name)}
               </td>
             </tr>
-            ${data.jobTitle ? `<tr><td style="font-size:${fontSize + 1}px;font-weight:600;color:${accentColor};padding-bottom:2px;letter-spacing:0.01em;">${Utils.escapeHtml(data.jobTitle)}</td></tr>` : ''}
-            ${data.company ? `<tr><td style="font-size:${fontSize}px;color:#555;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;padding-bottom:${showTagline && data.tagline ? 4 : 8}px;">${Utils.escapeHtml(data.company)}</td></tr>` : ''}
-            ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:#999;font-style:italic;padding-bottom:8px;">"${Utils.escapeHtml(data.tagline)}"</td></tr>` : ''}
+            ${data.jobTitle ? `<tr><td style="font-size:${fontSize + 1}px;font-weight:600;color:${cJob};padding-bottom:2px;letter-spacing:0.01em;">${Utils.escapeHtml(data.jobTitle)}</td></tr>` : ''}
+            ${data.company ? `<tr><td style="font-size:${fontSize}px;color:${cCompany};font-weight:500;text-transform:uppercase;letter-spacing:0.05em;padding-bottom:${showTagline && data.tagline ? 4 : 8}px;">${Utils.escapeHtml(data.company)}</td></tr>` : ''}
+            ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:${cTagline};font-style:italic;padding-bottom:8px;">"${Utils.escapeHtml(data.tagline)}"</td></tr>` : ''}
             ${showDivider ? `<tr><td style="padding-bottom:8px;"><div style="height:1px;background:linear-gradient(to right,${accentColor},transparent);width:180px;"></div></td></tr>` : ''}
             <tr>
-              <td style="font-size:${fontSize - 1}px;color:#666;line-height:1.8;">
+              <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:1.8;">
                 ${[
-                  data.email ? `<a href="mailto:${data.email}" style="color:${accentColor};text-decoration:none;">${Utils.escapeHtml(data.email)}</a>` : '',
-                  data.phone ? `<a href="tel:${data.phone}" style="color:#666;text-decoration:none;">${Utils.escapeHtml(data.phone)}</a>` : '',
-                  data.website ? `<a href="${Utils.normaliseUrl(data.website)}" style="color:${accentColor};text-decoration:none;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
+                  data.email ? `<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.email)}</a>` : '',
+                  data.phone ? `<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.phone)}</a>` : '',
+                  data.website ? `<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
                   data.address ? `<span>${Utils.escapeHtml(data.address)}</span>` : '',
                 ].filter(Boolean).join(' &nbsp;|&nbsp; ')}
               </td>
             </tr>
             ${social}
+            ${logoRow(data, options, 'executive')}
           </tbody>
         </table>
       </td>
@@ -192,20 +327,25 @@ const SignatureGenerator = (() => {
   function renderModern(data, options) {
     const { accentColor, fontSize, fontFamily, showDivider, showTagline } = options;
     const name = fullName(data);
-    const social = buildSocialIcons(data, options.showIcons, accentColor);
+    const social = buildSocialIcons(data, options, accentColor);
 
-    // Use a subtle accent bg banner
-    return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:${fontFamily};font-size:${fontSize}px;color:#333;max-width:500px;">
+    const cName = options.colorName && options.colorName !== '#111111' ? options.colorName : '#ffffff';
+    const cJob = options.colorJobTitle && options.colorJobTitle !== accentColor ? options.colorJobTitle : 'rgba(255,255,255,0.8)';
+    const cContact = options.colorContact || '#666666';
+    const cTagline = options.colorTagline || '#888888';
+
+    // Modern uses standard avatarCell because it has no left column stacking
+    return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:${fontFamily};font-size:${fontSize}px;color:${cContact};max-width:500px;">
   <tbody>
     <tr>
       <td style="background-color:${accentColor};padding:12px 16px;border-radius:8px 8px 0 0;" colspan="2">
         <table cellpadding="0" cellspacing="0" border="0" width="100%">
           <tbody>
             <tr>
-              ${avatarCell(data, 44, 'circle')}
+              ${avatarCell(data, options, 44, 'circle', '')}
               <td style="vertical-align:middle;">
-                <div style="font-size:${fontSize + 3}px;font-weight:700;color:#fff;line-height:1.2;">${Utils.escapeHtml(name)}</div>
-                ${data.jobTitle ? `<div style="font-size:${fontSize - 1}px;color:rgba(255,255,255,0.8);margin-top:1px;">${Utils.escapeHtml(data.jobTitle)}${data.company ? ` · ${Utils.escapeHtml(data.company)}` : ''}</div>` : ''}
+                <div style="font-size:${fontSize + 3}px;font-weight:700;color:${cName};line-height:1.2;">${Utils.escapeHtml(name)}</div>
+                ${data.jobTitle ? `<div style="font-size:${fontSize - 1}px;color:${cJob};margin-top:1px;">${Utils.escapeHtml(data.jobTitle)}${data.company ? ` · ${Utils.escapeHtml(data.company)}` : ''}</div>` : ''}
               </td>
             </tr>
           </tbody>
@@ -216,17 +356,18 @@ const SignatureGenerator = (() => {
       <td style="background-color:#f8f8fa;padding:10px 16px;border-radius:0 0 8px 8px;border:1px solid #e8e8ee;border-top:none;" colspan="2">
         <table cellpadding="0" cellspacing="0" border="0" width="100%">
           <tbody>
-            ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:#888;font-style:italic;padding-bottom:6px;">${Utils.escapeHtml(data.tagline)}</td></tr>` : ''}
+            ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:${cTagline};font-style:italic;padding-bottom:6px;">${Utils.escapeHtml(data.tagline)}</td></tr>` : ''}
             <tr>
-              <td style="font-size:${fontSize - 1}px;color:#666;line-height:2;">
+              <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:2;">
                 ${[
-                  data.email ? `<a href="mailto:${data.email}" style="color:${accentColor};text-decoration:none;margin-right:12px;">&#9993; ${Utils.escapeHtml(data.email)}</a>` : '',
-                  data.phone ? `<a href="tel:${data.phone}" style="color:#666;text-decoration:none;margin-right:12px;">&#128222; ${Utils.escapeHtml(data.phone)}</a>` : '',
-                  data.website ? `<a href="${Utils.normaliseUrl(data.website)}" style="color:${accentColor};text-decoration:none;">&#127758; ${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
+                  data.email ? `<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;margin-right:12px;">&#9993; ${Utils.escapeHtml(data.email)}</a>` : '',
+                  data.phone ? `<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;margin-right:12px;">&#128222; ${Utils.escapeHtml(data.phone)}</a>` : '',
+                  data.website ? `<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">&#127758; ${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
                 ].filter(Boolean).join(' ')}
               </td>
             </tr>
             ${social}
+            ${logoRow(data, options, 'modern')}
           </tbody>
         </table>
       </td>
@@ -239,11 +380,24 @@ const SignatureGenerator = (() => {
   function renderCreative(data, options) {
     const { accentColor, fontSize, fontFamily, showTagline } = options;
     const name = fullName(data);
-    const social = buildSocialIcons(data, options.showIcons, accentColor);
-    const lightAccent = Utils.adjustColor(accentColor, 160);
+    const social = buildSocialIcons(data, options, accentColor);
     const darkText = Utils.isLightColor(accentColor) ? '#111' : '#fff';
 
-    return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:${fontFamily};font-size:${fontSize}px;max-width:520px;">
+    const cName = options.colorName && options.colorName !== '#111111' ? options.colorName : darkText;
+    const cJob = options.colorJobTitle && options.colorJobTitle !== accentColor ? options.colorJobTitle : darkText;
+    const cCompany = options.colorCompany && options.colorCompany !== '#666666' ? options.colorCompany : darkText;
+    const cContact = options.colorContact || '#555555';
+    const cTagline = options.colorTagline || darkText;
+
+    const avatarSize = options.avatarSize || 56;
+    const avatarShape = options.avatarShape || 'rounded';
+    const avatarRadius = avatarShape === 'circle' ? '50%' : (avatarShape === 'rounded' ? '10px' : '0px');
+
+    const cBorderW = options.avatarBorderWidth !== undefined ? options.avatarBorderWidth : 2;
+    const cBorderColor = options.avatarBorderColor || 'rgba(255,255,255,0.3)';
+    const borderStyle = cBorderW > 0 ? `border:${cBorderW}px solid ${cBorderColor};` : '';
+
+    return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:${fontFamily};font-size:${fontSize}px;max-width:520px;color:${cContact};">
   <tbody>
     <tr>
       <td>
@@ -254,11 +408,11 @@ const SignatureGenerator = (() => {
                 <table cellpadding="0" cellspacing="0" border="0" width="100%">
                   <tbody>
                     <tr>
-                      ${data.avatar && data.showAvatar ? `<td style="padding-right:14px;vertical-align:middle;"><img src="${data.avatar}" width="56" height="56" alt="${Utils.escapeHtml(data.firstName || '')}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;display:block;border:2px solid rgba(255,255,255,0.3);" /></td>` : ''}
+                      ${data.avatar && options.showAvatar ? `<td style="padding-right:14px;vertical-align:middle;"><img src="${data.avatar}" width="${avatarSize}" height="${avatarSize}" alt="${Utils.escapeHtml(data.firstName || '')}" style="width:${avatarSize}px;height:${avatarSize}px;border-radius:${avatarRadius};object-fit:cover;display:block;${borderStyle}" /></td>` : ''}
                       <td style="vertical-align:middle;">
-                        <div style="font-size:${fontSize + 5}px;font-weight:800;color:${darkText};letter-spacing:-0.4px;line-height:1.1;">${Utils.escapeHtml(name)}</div>
-                        ${data.jobTitle ? `<div style="font-size:${fontSize}px;color:${darkText};opacity:0.75;margin-top:3px;font-weight:500;">${Utils.escapeHtml(data.jobTitle)}${data.company ? ` · ${Utils.escapeHtml(data.company)}` : ''}</div>` : ''}
-                        ${showTagline && data.tagline ? `<div style="font-size:${fontSize - 1}px;color:${darkText};opacity:0.6;margin-top:4px;font-style:italic;">${Utils.escapeHtml(data.tagline)}</div>` : ''}
+                        <div style="font-size:${fontSize + 5}px;font-weight:800;color:${cName};letter-spacing:-0.4px;line-height:1.1;">${Utils.escapeHtml(name)}</div>
+                        ${data.jobTitle ? `<div style="font-size:${fontSize}px;color:${cJob};opacity:0.75;margin-top:3px;font-weight:500;">${Utils.escapeHtml(data.jobTitle)}${data.company ? ` · <span style="color:${cCompany}">${Utils.escapeHtml(data.company)}</span>` : ''}</div>` : ''}
+                        ${showTagline && data.tagline ? `<div style="font-size:${fontSize - 1}px;color:${cTagline};opacity:0.6;margin-top:4px;font-style:italic;">${Utils.escapeHtml(data.tagline)}</div>` : ''}
                       </td>
                     </tr>
                   </tbody>
@@ -270,15 +424,16 @@ const SignatureGenerator = (() => {
                 <table cellpadding="0" cellspacing="0" border="0">
                   <tbody>
                     <tr>
-                      <td style="font-size:${fontSize - 1}px;color:#555;line-height:1.8;">
+                      <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:1.8;">
                         ${[
                           data.email ? `<a href="mailto:${data.email}" style="color:${accentColor};text-decoration:none;font-weight:500;">${Utils.escapeHtml(data.email)}</a>` : '',
-                          data.phone ? `<a href="tel:${data.phone}" style="color:#666;text-decoration:none;">${Utils.escapeHtml(data.phone)}</a>` : '',
+                          data.phone ? `<a href="tel:${data.phone}" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.phone)}</a>` : '',
                           data.website ? `<a href="${Utils.normaliseUrl(data.website)}" style="color:${accentColor};text-decoration:none;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
-                        ].filter(Boolean).join(' &nbsp;&bull;&nbsp; ')}
+                         ].filter(Boolean).join(' &nbsp;&bull;&nbsp; ')}
                       </td>
                     </tr>
                     ${social}
+                    ${logoRow(data, options, 'creative')}
                   </tbody>
                 </table>
               </td>
@@ -295,34 +450,41 @@ const SignatureGenerator = (() => {
   function renderCorporate(data, options) {
     const { accentColor, fontSize, fontFamily, showDivider, showTagline } = options;
     const name = fullName(data);
-    const social = buildSocialIcons(data, options.showIcons, accentColor);
+    const social = buildSocialIcons(data, options, accentColor);
 
-    return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:${fontFamily};font-size:${fontSize}px;color:#2c2c2c;max-width:520px;">
+    const cName = options.colorName || '#1a1a1a';
+    const cJob = options.colorJobTitle || accentColor;
+    const cCompany = options.colorCompany || '#444444';
+    const cContact = options.colorContact || '#555555';
+    const cTagline = options.colorTagline || '#888888';
+
+    return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:${fontFamily};font-size:${fontSize}px;color:${cContact};max-width:520px;">
   <tbody>
     <tr>
-      ${avatarCell(data, 64, 'square')}
+      ${leftColumnCell(data, options, 64, 'square', '')}
       <td style="vertical-align:top;padding-top:2px;">
         <table cellpadding="0" cellspacing="0" border="0" width="100%">
           <tbody>
             <tr>
-              <td style="font-size:${fontSize + 4}px;font-weight:700;color:#1a1a1a;letter-spacing:-0.2px;line-height:1.2;padding-bottom:2px;">
+              <td style="font-size:${fontSize + 4}px;font-weight:700;color:${cName};letter-spacing:-0.2px;line-height:1.2;padding-bottom:2px;">
                 ${Utils.escapeHtml(name)}
               </td>
             </tr>
-            ${data.jobTitle ? `<tr><td style="font-size:${fontSize}px;color:${accentColor};font-weight:600;padding-bottom:1px;">${Utils.escapeHtml(data.jobTitle)}</td></tr>` : ''}
-            ${data.department ? `<tr><td style="font-size:${fontSize - 1}px;color:#666;padding-bottom:1px;">${Utils.escapeHtml(data.department)}</td></tr>` : ''}
-            ${data.company ? `<tr><td style="font-size:${fontSize - 1}px;color:#444;font-weight:600;padding-bottom:${showDivider ? 8 : 4}px;text-transform:uppercase;letter-spacing:0.04em;">${Utils.escapeHtml(data.company)}</td></tr>` : ''}
+            ${data.jobTitle ? `<tr><td style="font-size:${fontSize}px;color:${cJob};font-weight:600;padding-bottom:1px;">${Utils.escapeHtml(data.jobTitle)}</td></tr>` : ''}
+            ${data.department ? `<tr><td style="font-size:${fontSize - 1}px;color:${cContact};padding-bottom:1px;">${Utils.escapeHtml(data.department)}</td></tr>` : ''}
+            ${data.company ? `<tr><td style="font-size:${fontSize - 1}px;color:${cCompany};font-weight:600;padding-bottom:${showDivider ? 8 : 4}px;text-transform:uppercase;letter-spacing:0.04em;">${Utils.escapeHtml(data.company)}</td></tr>` : ''}
             ${showDivider ? `<tr><td style="padding-bottom:8px;"><hr style="border:none;border-top:1px solid #e0e0e0;margin:0;" /></td></tr>` : ''}
-            ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:#888;font-style:italic;padding-bottom:6px;">${Utils.escapeHtml(data.tagline)}</td></tr>` : ''}
+            ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:${cTagline};font-style:italic;padding-bottom:6px;">${Utils.escapeHtml(data.tagline)}</td></tr>` : ''}
             <tr>
-              <td style="font-size:${fontSize - 1}px;line-height:1.8;">
-                ${data.email ? `<span><a href="mailto:${data.email}" style="color:${accentColor};text-decoration:none;">${Utils.escapeHtml(data.email)}</a></span><br>` : ''}
-                ${data.phone ? `<span><a href="tel:${data.phone}" style="color:#555;text-decoration:none;">T: ${Utils.escapeHtml(data.phone)}</a></span><br>` : ''}
-                ${data.website ? `<span><a href="${Utils.normaliseUrl(data.website)}" style="color:${accentColor};text-decoration:none;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a></span><br>` : ''}
-                ${data.address ? `<span style="color:#888;">${Utils.escapeHtml(data.address)}</span>` : ''}
+              <td style="font-size:${fontSize - 1}px;line-height:1.8;color:${cContact};">
+                ${data.email ? `<span><a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.email)}</a></span><br>` : ''}
+                ${data.phone ? `<span><a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">T: ${Utils.escapeHtml(data.phone)}</a></span><br>` : ''}
+                ${data.website ? `<span><a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a></span><br>` : ''}
+                ${data.address ? `<span style="color:${cContact};opacity:0.8;">${Utils.escapeHtml(data.address)}</span>` : ''}
               </td>
             </tr>
             ${social}
+            ${logoRow(data, options, 'corporate')}
           </tbody>
         </table>
       </td>
@@ -335,39 +497,49 @@ const SignatureGenerator = (() => {
   function renderLuxury(data, options) {
     const { accentColor, fontSize, fontFamily, showDivider, showTagline } = options;
     const name = fullName(data);
-    const social = buildSocialIcons(data, options.showIcons, accentColor);
+    const social = buildSocialIcons(data, options, accentColor);
     const gold   = accentColor; // Use the accent as the "gold" tone
 
-    return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:${fontFamily};font-size:${fontSize}px;color:#1a1a1a;max-width:500px;">
+    const cName = options.colorName || '#111111';
+    const cJob = options.colorJobTitle || gold;
+    const cCompany = options.colorCompany || '#555555';
+    const cContact = options.colorContact || '#555555';
+    const cTagline = options.colorTagline || '#888888';
+
+    const avatarSize = options.avatarSize || 60;
+    const avatarShape = options.avatarShape || 'circle';
+
+    return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:${fontFamily};font-size:${fontSize}px;color:${cContact};max-width:500px;">
   <tbody>
     <tr>
       <td style="border-top:2px solid ${gold};padding-top:14px;">
         <table cellpadding="0" cellspacing="0" border="0" width="100%">
           <tbody>
             <tr>
-              ${data.avatar && data.showAvatar ? `<td style="padding-right:16px;vertical-align:top;"><img src="${data.avatar}" width="60" height="60" alt="${Utils.escapeHtml(data.firstName || '')}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;display:block;border:2px solid ${gold};" /></td>` : ''}
+              ${leftColumnCell(data, options, avatarSize, avatarShape, "border:2px solid " + gold + ";")}
               <td style="vertical-align:top;">
                 <table cellpadding="0" cellspacing="0" border="0">
                   <tbody>
                     <tr>
-                      <td style="font-size:${fontSize + 4}px;font-weight:700;color:#111;letter-spacing:0.02em;line-height:1.2;padding-bottom:2px;">
+                      <td style="font-size:${fontSize + 4}px;font-weight:700;color:${cName};letter-spacing:0.02em;line-height:1.2;padding-bottom:2px;">
                         ${Utils.escapeHtml(name)}
                       </td>
                     </tr>
-                    ${data.jobTitle ? `<tr><td style="font-size:${fontSize - 1}px;color:${gold};font-weight:600;letter-spacing:0.12em;text-transform:uppercase;padding-bottom:${showTagline && data.tagline ? 3 : 8}px;">${Utils.escapeHtml(data.jobTitle)}${data.company ? ` &nbsp;·&nbsp; ${Utils.escapeHtml(data.company)}` : ''}</td></tr>` : ''}
-                    ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:#888;font-style:italic;letter-spacing:0.02em;padding-bottom:8px;">${Utils.escapeHtml(data.tagline)}</td></tr>` : ''}
+                    ${data.jobTitle ? `<tr><td style="font-size:${fontSize - 1}px;color:${cJob};font-weight:600;letter-spacing:0.12em;text-transform:uppercase;padding-bottom:${showTagline && data.tagline ? 3 : 8}px;">${Utils.escapeHtml(data.jobTitle)}${data.company ? ` &nbsp;·&nbsp; <span style="color:${cCompany}">${Utils.escapeHtml(data.company)}</span>` : ''}</td></tr>` : ''}
+                    ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:${cTagline};font-style:italic;letter-spacing:0.02em;padding-bottom:8px;">${Utils.escapeHtml(data.tagline)}</td></tr>` : ''}
                     ${showDivider ? `<tr><td style="padding-bottom:8px;"><div style="width:100%;height:1px;background:linear-gradient(to right,${gold},transparent);"></div></td></tr>` : ''}
                     <tr>
-                      <td style="font-size:${fontSize - 1}px;color:#555;line-height:1.9;letter-spacing:0.01em;">
+                      <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:1.9;letter-spacing:0.01em;">
                         ${[
-                          data.email ? `<a href="mailto:${data.email}" style="color:${gold};text-decoration:none;">${Utils.escapeHtml(data.email)}</a>` : '',
-                          data.phone ? `<a href="tel:${data.phone}" style="color:#666;text-decoration:none;">${Utils.escapeHtml(data.phone)}</a>` : '',
-                          data.website ? `<a href="${Utils.normaliseUrl(data.website)}" style="color:${gold};text-decoration:none;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
-                          data.address ? `<span style="color:#888;">${Utils.escapeHtml(data.address)}</span>` : '',
+                          data.email ? `<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.email)}</a>` : '',
+                          data.phone ? `<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.phone)}</a>` : '',
+                          data.website ? `<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
+                          data.address ? `<span style="color:${cContact};opacity:0.8;">${Utils.escapeHtml(data.address)}</span>` : '',
                         ].filter(Boolean).join(' &nbsp;·&nbsp; ')}
                       </td>
                     </tr>
                     ${social}
+                    ${logoRow(data, options, 'luxury')}
                   </tbody>
                 </table>
               </td>
@@ -394,22 +566,53 @@ const SignatureGenerator = (() => {
    * @returns {string}        — HTML string
    */
   function generate(data, options) {
+    currentHoverStyles = []; // Reset for this generation
+
+    const hoverContactColor = options.colorContactHover || '#6366f1';
+    currentHoverStyles.push(`.ef-contact-link { transition: color 150ms ease-in-out; }`);
+    currentHoverStyles.push(`.ef-contact-link:hover { color: ${hoverContactColor} !important; }`);
+
     const template = options.template || 'minimal';
+    let html = '';
     switch (template) {
-      case 'executive': return renderExecutive(data, options);
-      case 'modern':    return renderModern(data, options);
-      case 'creative':  return renderCreative(data, options);
-      case 'corporate': return renderCorporate(data, options);
-      case 'luxury':    return renderLuxury(data, options);
+      case 'executive': html = renderExecutive(data, options); break;
+      case 'modern':    html = renderModern(data, options); break;
+      case 'creative':  html = renderCreative(data, options); break;
+      case 'corporate': html = renderCorporate(data, options); break;
+      case 'luxury':    html = renderLuxury(data, options); break;
       case 'minimal':
-      default:          return renderMinimal(data, options);
+      default:          html = renderMinimal(data, options); break;
     }
+
+    if (data.disclaimer && data.disclaimer.trim() && (!options || options.showDisclaimer !== false)) {
+      const dColor = options.colorDisclaimer || '#666666';
+      const dSize = options.disclaimerSize || 10;
+      const dSpacingTop = options.disclaimerSpacingTop !== undefined ? options.disclaimerSpacingTop : 10;
+      const dFamily = options.fontFamily || 'Arial, Helvetica, sans-serif';
+      const disclaimerHtml = `
+<table cellpadding="0" cellspacing="0" border="0" style="font-family:${dFamily};font-size:${dSize}px;color:${dColor};line-height:1.5;max-width:500px;width:100%;">
+  <tbody>
+    <tr>
+      <td style="color:${dColor};font-size:${dSize}px;line-height:1.5;padding-top:${dSpacingTop}px;">
+        ${Utils.escapeHtml(data.disclaimer).replace(/\n/g, '<br />')}
+      </td>
+    </tr>
+  </tbody>
+</table>`;
+      html = html + disclaimerHtml;
+    }
+
+    if (currentHoverStyles.length > 0) {
+      const styleBlock = `<style type="text/css">\n${currentHoverStyles.join('\n')}\n</style>\n`;
+      html = styleBlock + html;
+    }
+    return html;
   }
 
   /**
    * Generate plain-text version of the signature.
    */
-  function generatePlainText(data) {
+  function generatePlainText(data, options) {
     const name = [data.firstName, data.lastName].filter(Boolean).join(' ');
     const lines = [];
     if (name)           lines.push(`── ${name} ──`);
@@ -422,6 +625,11 @@ const SignatureGenerator = (() => {
     if (data.address)   lines.push(`Addr:  ${data.address}`);
     const social = buildSocialText(data);
     if (social)         { lines.push(''); lines.push(social); }
+    if (data.disclaimer && (!options || options.showDisclaimer !== false)) {
+      lines.push('');
+      lines.push('---');
+      lines.push(data.disclaimer);
+    }
     return lines.join('\n');
   }
 
@@ -441,12 +649,12 @@ const SignatureGenerator = (() => {
       jobTitle: 'Designer', company: 'Studio',
       email: 'jane@studio.co', phone: '+1 555 000',
       website: 'studio.co', tagline: 'Great work.',
-      avatar: null, showAvatar: false,
+      avatar: null, showAvatar: false, logo: null, showLogo: false
     };
     const opts = {
       template: templateId, accentColor,
       fontSize: 10, fontFamily: 'Arial, sans-serif',
-      showDivider: true, showTagline: true, showIcons: false,
+      showDivider: true, showTagline: true, showIcons: false, showLogo: false
     };
     return generate(dummyData, opts);
   }

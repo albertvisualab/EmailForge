@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  servidor_web:
+    image: "nginx:alpine"
+    container_name: emailforge_web
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/usr/share/nginx/html
+    restart: unless-stopped

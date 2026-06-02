@@ -9,7 +9,7 @@
 
 /* ══════════════════════════════════════════════════════════════════
    CONSTANTS & CONFIG
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 const STORAGE_KEY_PROFILES = 'ef_profiles';
 const STORAGE_KEY_ACTIVE   = 'ef_active_profile';
@@ -34,9 +34,11 @@ const DEFAULT_PROFILE = {
   data: {
     firstName: '', lastName: '', jobTitle: '', department: '',
     company: '', website: '', email: '', phone: '', address: '',
-    tagline: '', avatar: null,
+    tagline: '', avatar: null, originalAvatar: null, logo: null, originalLogo: null,
+    logoUrl: '',
     linkedin: '', twitter: '', instagram: '', github: '',
     dribbble: '', youtube: '', calendly: '', whatsapp: '',
+    disclaimer: 'Important: The content of this email is confidential and intended for the recipient specified in message only. It is strictly forbidden to share any part of this message with any third party, without a written consent of the sender. If you received this message by mistake, please reply to this message and follow with its deletion, so that we can ensure such a mistake does not occur in the future.',
   },
   options: {
     template:    'minimal',
@@ -45,14 +47,55 @@ const DEFAULT_PROFILE = {
     fontFamily:  'Arial, Helvetica, sans-serif',
     showDivider: true,
     showAvatar:  true,
+    showLogo:    true,
     showIcons:   true,
     showTagline: true,
+    showDisclaimer: true,
+    
+    // Custom typography colors
+    colorName:   '#111111',
+    colorJobTitle: '#6366f1',
+    colorCompany: '#666666',
+    colorContact: '#666666',
+    colorContactHover: '#6366f1',
+    colorTagline: '#999999',
+    colorDisclaimer: '#666666',
+    disclaimerSize: 10,
+    disclaimerSpacingTop: 10,
+    
+    // Avatar design options
+    avatarSize: 60,
+    avatarShape: 'circle',
+    avatarSpacingTop: 0,
+    avatarBorderWidth: 0,
+    avatarBorderColor: '#6366f1',
+    
+    // Logo design options
+    logoSize: 60,
+    logoShape: 'square',
+    logoPlacement: 'details',
+    logoSpacing: 10,
+    
+    // Social icon design options
+    socialIconColorMode: 'brand',
+    socialIconShape: 'circle',
+    socialIconCustomColor: '#6366f1',
+    
+    // Individual social normal/hover colors
+    socialColor_linkedin: '#0A66C2', socialHover_linkedin: '#004b93',
+    socialColor_twitter: '#000000', socialHover_twitter: '#222222',
+    socialColor_instagram: '#E4405F', socialHover_instagram: '#c13584',
+    socialColor_github: '#181717', socialHover_github: '#404040',
+    socialColor_dribbble: '#EA4C89', socialHover_dribbble: '#c32361',
+    socialColor_youtube: '#FF0000', socialHover_youtube: '#b30000',
+    socialColor_calendly: '#006BFF', socialHover_calendly: '#004b93',
+    socialColor_whatsapp: '#25D366', socialHover_whatsapp: '#128C7E',
   },
 };
 
 /* ══════════════════════════════════════════════════════════════════
    APPLICATION STATE
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 const State = {
   profiles:      [],      // array of profile objects
@@ -66,23 +109,28 @@ const State = {
 
 /* ══════════════════════════════════════════════════════════════════
    DATA HELPERS
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 /** Read all form field values into a data object. */
 function readFormData() {
   const fields = [
     'firstName','lastName','jobTitle','department','company',
     'website','email','phone','address','tagline',
+    'logoUrl',
     'linkedin','twitter','instagram','github',
     'dribbble','youtube','calendly','whatsapp',
+    'disclaimer',
   ];
   const data = {};
   fields.forEach(f => {
     const el = document.getElementById(f);
     data[f] = el ? el.value.trim() : '';
   });
-  // Avatar is stored separately (base64)
+  // Avatar and logo are stored separately (base64)
   data.avatar = State.active?.data?.avatar || null;
+  data.originalAvatar = State.active?.data?.originalAvatar || null;
+  data.logo = State.active?.data?.logo || null;
+  data.originalLogo = State.active?.data?.originalLogo || null;
   return data;
 }
 
@@ -95,8 +143,57 @@ function readOptions() {
     fontFamily:  document.getElementById('fontFamily')?.value || 'Arial, Helvetica, sans-serif',
     showDivider: document.getElementById('showDivider')?.checked ?? true,
     showAvatar:  document.getElementById('showAvatar')?.checked  ?? true,
+    showLogo:    document.getElementById('showLogo')?.checked    ?? true,
     showIcons:   document.getElementById('showIcons')?.checked   ?? true,
     showTagline: document.getElementById('showTagline')?.checked ?? true,
+    showDisclaimer: document.getElementById('showDisclaimer')?.checked ?? true,
+    
+    // Custom colors
+    colorName:   document.getElementById('colorName')?.value || '#111111',
+    colorJobTitle: document.getElementById('colorJobTitle')?.value || '#6366f1',
+    colorCompany: document.getElementById('colorCompany')?.value || '#666666',
+    colorContact: document.getElementById('colorContact')?.value || '#666666',
+    colorContactHover: document.getElementById('colorContactHover')?.value || '#6366f1',
+    colorTagline: document.getElementById('colorTagline')?.value || '#999999',
+    colorDisclaimer: document.getElementById('colorDisclaimer')?.value || '#666666',
+    disclaimerSize: parseInt(document.getElementById('disclaimerSize')?.value || 10),
+    disclaimerSpacingTop: parseInt(document.getElementById('disclaimerSpacingTop')?.value || 10),
+    
+    // Avatar size, shape, spacing, border
+    avatarSize:        parseInt(document.getElementById('avatarSize')?.value || 60),
+    avatarShape:       document.getElementById('avatarShape')?.value || 'circle',
+    avatarSpacingTop:  parseInt(document.getElementById('avatarSpacingTop')?.value || 0),
+    avatarBorderWidth: parseInt(document.getElementById('avatarBorderWidth')?.value || 0),
+    avatarBorderColor: document.getElementById('avatarBorderColor')?.value || '#6366f1',
+    
+    // Logo size, shape, placement, spacing
+    logoSize:      parseInt(document.getElementById('logoSize')?.value || 60),
+    logoShape:     document.getElementById('logoShape')?.value || 'square',
+    logoPlacement: document.getElementById('logoPlacement')?.value || 'details',
+    logoSpacing:   parseInt(document.getElementById('logoSpacing')?.value || 10),
+    
+    // Social design options
+    socialIconColorMode: document.getElementById('socialIconColorMode')?.value || 'brand',
+    socialIconShape: document.getElementById('socialIconShape')?.value || 'circle',
+    socialIconCustomColor: document.getElementById('socialIconCustomColor')?.value || '#6366f1',
+    
+    // Individual social normal/hover colors
+    socialColor_linkedin: document.getElementById('socialColor_linkedin')?.value || '#0A66C2',
+    socialHover_linkedin: document.getElementById('socialHover_linkedin')?.value || '#004b93',
+    socialColor_twitter: document.getElementById('socialColor_twitter')?.value || '#000000',
+    socialHover_twitter: document.getElementById('socialHover_twitter')?.value || '#222222',
+    socialColor_instagram: document.getElementById('socialColor_instagram')?.value || '#E4405F',
+    socialHover_instagram: document.getElementById('socialHover_instagram')?.value || '#c13584',
+    socialColor_github: document.getElementById('socialColor_github')?.value || '#181717',
+    socialHover_github: document.getElementById('socialHover_github')?.value || '#404040',
+    socialColor_dribbble: document.getElementById('socialColor_dribbble')?.value || '#EA4C89',
+    socialHover_dribbble: document.getElementById('socialHover_dribbble')?.value || '#c32361',
+    socialColor_youtube: document.getElementById('socialColor_youtube')?.value || '#FF0000',
+    socialHover_youtube: document.getElementById('socialHover_youtube')?.value || '#b30000',
+    socialColor_calendly: document.getElementById('socialColor_calendly')?.value || '#006BFF',
+    socialHover_calendly: document.getElementById('socialHover_calendly')?.value || '#004b93',
+    socialColor_whatsapp: document.getElementById('socialColor_whatsapp')?.value || '#25D366',
+    socialHover_whatsapp: document.getElementById('socialHover_whatsapp')?.value || '#128C7E',
   };
 }
 
@@ -108,8 +205,10 @@ function populateForm(profile) {
   const fields = [
     'firstName','lastName','jobTitle','department','company',
     'website','email','phone','address','tagline',
+    'logoUrl',
     'linkedin','twitter','instagram','github',
     'dribbble','youtube','calendly','whatsapp',
+    'disclaimer',
   ];
   fields.forEach(f => {
     const el = document.getElementById(f);
@@ -123,6 +222,32 @@ function populateForm(profile) {
     clearAvatarPreview();
   }
 
+  // Logo preview
+  if (data.logo) {
+    setLogoPreview(data.logo);
+  } else {
+    clearLogoPreview();
+  }
+
+  // Custom typography colors
+  const colorFields = ['colorName', 'colorJobTitle', 'colorCompany', 'colorContact', 'colorContactHover', 'colorTagline', 'colorDisclaimer'];
+  colorFields.forEach(f => {
+    const el = document.getElementById(f);
+    if (el) el.value = options[f] || DEFAULT_PROFILE.options[f];
+  });
+
+  // Disclaimer size and spacing
+  const disclaimerSizeRange = document.getElementById('disclaimerSize');
+  if (disclaimerSizeRange) {
+    disclaimerSizeRange.value = options.disclaimerSize || 10;
+    document.getElementById('disclaimerSizeVal').textContent = (options.disclaimerSize || 10) + 'px';
+  }
+  const disclaimerSpacingTopRange = document.getElementById('disclaimerSpacingTop');
+  if (disclaimerSpacingTopRange) {
+    disclaimerSpacingTopRange.value = options.disclaimerSpacingTop !== undefined ? options.disclaimerSpacingTop : 10;
+    document.getElementById('disclaimerSpacingTopVal').textContent = (options.disclaimerSpacingTop !== undefined ? options.disclaimerSpacingTop : 10) + 'px';
+  }
+
   // Design options
   const fontSel = document.getElementById('fontFamily');
   if (fontSel) fontSel.value = options.fontFamily || 'Arial, Helvetica, sans-serif';
@@ -133,7 +258,71 @@ function populateForm(profile) {
     document.getElementById('fontSizeVal').textContent = (options.fontSize || 13) + 'px';
   }
 
-  const toggles = ['showDivider','showAvatar','showIcons','showTagline'];
+  // Avatar size, shape, spacing, border
+  const avatarSizeRange = document.getElementById('avatarSize');
+  if (avatarSizeRange) {
+    avatarSizeRange.value = options.avatarSize || 60;
+    document.getElementById('avatarSizeVal').textContent = (options.avatarSize || 60) + 'px';
+  }
+  const avatarShapeSel = document.getElementById('avatarShape');
+  if (avatarShapeSel) avatarShapeSel.value = options.avatarShape || 'circle';
+
+  const avatarSpacingTopRange = document.getElementById('avatarSpacingTop');
+  if (avatarSpacingTopRange) {
+    avatarSpacingTopRange.value = options.avatarSpacingTop !== undefined ? options.avatarSpacingTop : 0;
+    document.getElementById('avatarSpacingTopVal').textContent = (options.avatarSpacingTop !== undefined ? options.avatarSpacingTop : 0) + 'px';
+  }
+
+  const avatarBorderWidthRange = document.getElementById('avatarBorderWidth');
+  if (avatarBorderWidthRange) {
+    avatarBorderWidthRange.value = options.avatarBorderWidth !== undefined ? options.avatarBorderWidth : 0;
+    document.getElementById('avatarBorderWidthVal').textContent = (options.avatarBorderWidth !== undefined ? options.avatarBorderWidth : 0) + 'px';
+  }
+
+  const avatarBorderColorInput = document.getElementById('avatarBorderColor');
+  if (avatarBorderColorInput) avatarBorderColorInput.value = options.avatarBorderColor || '#6366f1';
+
+  // Logo size, shape, placement, spacing
+  const logoSizeRange = document.getElementById('logoSize');
+  if (logoSizeRange) {
+    logoSizeRange.value = options.logoSize || 60;
+    document.getElementById('logoSizeVal').textContent = (options.logoSize || 60) + 'px';
+  }
+  const logoShapeSel = document.getElementById('logoShape');
+  if (logoShapeSel) logoShapeSel.value = options.logoShape || 'square';
+
+  const logoPlacementInput = document.getElementById('logoPlacement');
+  if (logoPlacementInput) logoPlacementInput.value = options.logoPlacement || 'details';
+
+  const logoSpacingRange = document.getElementById('logoSpacing');
+  if (logoSpacingRange) {
+    logoSpacingRange.value = options.logoSpacing !== undefined ? options.logoSpacing : 10;
+    document.getElementById('logoSpacingVal').textContent = (options.logoSpacing !== undefined ? options.logoSpacing : 10) + 'px';
+  }
+
+  // Social options
+  const socialColorModeSel = document.getElementById('socialIconColorMode');
+  if (socialColorModeSel) {
+    socialColorModeSel.value = options.socialIconColorMode || 'brand';
+    toggleSocialCustomColorRow(options.socialIconColorMode === 'custom');
+  }
+  const socialShapeSel = document.getElementById('socialIconShape');
+  if (socialShapeSel) socialShapeSel.value = options.socialIconShape || 'circle';
+
+  const socialCustomColorInput = document.getElementById('socialIconCustomColor');
+  if (socialCustomColorInput) socialCustomColorInput.value = options.socialIconCustomColor || '#6366f1';
+
+  // Individual social colors
+  const socialKeys = ['linkedin', 'twitter', 'instagram', 'github', 'dribbble', 'youtube', 'calendly', 'whatsapp'];
+  socialKeys.forEach(key => {
+    const normalInput = document.getElementById(`socialColor_${key}`);
+    if (normalInput) normalInput.value = options[`socialColor_${key}`] || DEFAULT_PROFILE.options[`socialColor_${key}`];
+    
+    const hoverInput = document.getElementById(`socialHover_${key}`);
+    if (hoverInput) hoverInput.value = options[`socialHover_${key}`] || DEFAULT_PROFILE.options[`socialHover_${key}`];
+  });
+
+  const toggles = ['showDivider','showAvatar','showLogo','showIcons','showTagline','showDisclaimer'];
   toggles.forEach(key => {
     const el = document.getElementById(key);
     if (el) el.checked = options[key] ?? true;
@@ -148,7 +337,7 @@ function populateForm(profile) {
 
 /* ══════════════════════════════════════════════════════════════════
    RENDER LOOP
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 /**
  * Master render function — reads current form state,
@@ -167,18 +356,20 @@ const renderSignature = Utils.debounce(function () {
     return;
   }
 
-  // Merge avatar from state (base64 not in form)
+  // Merge avatar & logo from state (base64 not in form)
   data.avatar     = State.active?.data?.avatar || null;
   data.showAvatar = options.showAvatar;
+  data.logo       = State.active?.data?.logo || null;
+  data.showLogo   = options.showLogo;
 
   const html      = SignatureGenerator.generate(data, options);
-  const plainText = SignatureGenerator.generatePlainText(data);
+  const plainText = SignatureGenerator.generatePlainText(data, options);
 
   PreviewRenderer.render(html);
 
   // Persist current state to active profile
   if (State.active) {
-    State.active.data    = { ...data };
+    State.active.data    = { ...State.active.data, ...data };
     State.active.options = { ...options };
     saveProfiles();
   }
@@ -190,12 +381,28 @@ const renderSignature = Utils.debounce(function () {
 
 /* ══════════════════════════════════════════════════════════════════
    PROFILE MANAGEMENT
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 function loadProfiles() {
   const saved = Utils.storage.get(STORAGE_KEY_PROFILES);
   if (saved && Array.isArray(saved) && saved.length) {
-    State.profiles = saved;
+    State.profiles = saved.map(profile => {
+      // Ensure missing/new properties from DEFAULT_PROFILE are initialized
+      profile.data = { ...DEFAULT_PROFILE.data, ...profile.data };
+      profile.options = { ...DEFAULT_PROFILE.options, ...profile.options };
+      
+      // If disclaimer is missing or empty, populate with DEFAULT_PROFILE disclaimer
+      if (profile.data.disclaimer === undefined || profile.data.disclaimer === null || profile.data.disclaimer === '') {
+        profile.data.disclaimer = DEFAULT_PROFILE.data.disclaimer;
+      }
+      if (profile.options.disclaimerSize === undefined) {
+        profile.options.disclaimerSize = 10;
+      }
+      if (profile.options.disclaimerSpacingTop === undefined) {
+        profile.options.disclaimerSpacingTop = 10;
+      }
+      return profile;
+    });
   } else {
     State.profiles = [Utils.deepClone(DEFAULT_PROFILE)];
   }
@@ -295,7 +502,7 @@ function updateProfileButton() {
 
 /* ══════════════════════════════════════════════════════════════════
    TEMPLATE SELECTION
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 function renderTemplateGrid() {
   const grid = document.getElementById('templatesGrid');
@@ -347,7 +554,7 @@ function selectTemplate(id, rerender = true) {
 
 /* ══════════════════════════════════════════════════════════════════
    COLOR PRESETS
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 function renderColorPresets() {
   const container = document.getElementById('colorPresets');
@@ -378,7 +585,7 @@ function applyAccentColor(hex) {
 
 /* ══════════════════════════════════════════════════════════════════
    TAB NAVIGATION
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 function initTabs() {
   document.querySelectorAll('.ef-tab').forEach(tab => {
@@ -406,15 +613,55 @@ function activateTab(tabId) {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   AVATAR UPLOAD
-══════════════════════════════════════════════════════════════════ */
+   AVATAR & LOGO UPLOAD (WITH CROPPER.JS)
+   ══════════════════════════════════════════════════════════════════ */
 
-function initAvatarUpload() {
-  const input       = document.getElementById('avatarUpload');
-  const removeBtn   = document.getElementById('removeAvatar');
+function initImageCropper() {
+  const cropModal = document.getElementById('cropModalOverlay');
+  const cropImgSrc = document.getElementById('cropImageSource');
+  const cancelBtn = document.getElementById('cancelCropModal');
+  const saveBtn = document.getElementById('saveCropModal');
+  
+  const avatarInput = document.getElementById('avatarUpload');
+  const avatarRemoveBtn = document.getElementById('removeAvatar');
+  const avatarCropBtn = document.getElementById('cropAvatarBtn');
+  
+  const logoInput = document.getElementById('logoUpload');
+  const logoRemoveBtn = document.getElementById('removeLogo');
+  const logoCropBtn = document.getElementById('cropLogoBtn');
 
-  if (input) {
-    input.addEventListener('change', async e => {
+  let activeCropper = null;
+  let cropTarget = null; // 'avatar' | 'logo'
+
+  // Helper to open modal and start cropper
+  function openCropModal(imageSrc, target) {
+    cropTarget = target;
+    cropImgSrc.src = imageSrc;
+    cropModal.hidden = false;
+    
+    if (activeCropper) {
+      activeCropper.destroy();
+      activeCropper = null;
+    }
+    
+    const aspectRatio = target === 'avatar' ? 1 : NaN;
+    
+    // Tiny delay to ensure modal display completes
+    setTimeout(() => {
+      activeCropper = new Cropper(cropImgSrc, {
+        aspectRatio: aspectRatio,
+        viewMode: 1,
+        autoCropArea: 0.95,
+        responsive: true,
+        restore: false,
+        checkOrientation: false,
+      });
+    }, 50);
+  }
+
+  // Avatar Upload Handler
+  if (avatarInput) {
+    avatarInput.addEventListener('change', async e => {
       const file = e.target.files?.[0];
       if (!file) return;
       if (file.size > 2 * 1024 * 1024) {
@@ -423,21 +670,121 @@ function initAvatarUpload() {
       }
       try {
         const dataUrl = await Utils.readFileAsDataURL(file);
-        setAvatarPreview(dataUrl);
-        if (State.active) State.active.data.avatar = dataUrl;
-        renderSignature();
+        if (State.active) {
+          State.active.data.originalAvatar = dataUrl;
+        }
+        openCropModal(dataUrl, 'avatar');
+        avatarInput.value = '';
       } catch {
         Utils.showToast('⚠ Could not read image file.');
       }
     });
   }
 
-  if (removeBtn) {
-    removeBtn.addEventListener('click', () => {
+  // Logo Upload Handler
+  if (logoInput) {
+    logoInput.addEventListener('change', async e => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) {
+        Utils.showToast('⚠ Image too large — please use an image under 2 MB.');
+        return;
+      }
+      try {
+        const dataUrl = await Utils.readFileAsDataURL(file);
+        if (State.active) {
+          State.active.data.originalLogo = dataUrl;
+        }
+        openCropModal(dataUrl, 'logo');
+        logoInput.value = '';
+      } catch {
+        Utils.showToast('⚠ Could not read image file.');
+      }
+    });
+  }
+
+  // Manual Crop Button Clicks
+  if (avatarCropBtn) {
+    avatarCropBtn.addEventListener('click', () => {
+      const original = State.active?.data?.originalAvatar || State.active?.data?.avatar;
+      if (original) {
+        openCropModal(original, 'avatar');
+      }
+    });
+  }
+
+  if (logoCropBtn) {
+    logoCropBtn.addEventListener('click', () => {
+      const original = State.active?.data?.originalLogo || State.active?.data?.logo;
+      if (original) {
+        openCropModal(original, 'logo');
+      }
+    });
+  }
+
+  // Remove buttons
+  if (avatarRemoveBtn) {
+    avatarRemoveBtn.addEventListener('click', () => {
       clearAvatarPreview();
-      if (State.active) State.active.data.avatar = null;
-      if (input) input.value = '';
+      if (State.active) {
+        State.active.data.avatar = null;
+        State.active.data.originalAvatar = null;
+      }
       renderSignature();
+    });
+  }
+
+  if (logoRemoveBtn) {
+    logoRemoveBtn.addEventListener('click', () => {
+      clearLogoPreview();
+      if (State.active) {
+        State.active.data.logo = null;
+        State.active.data.originalLogo = null;
+      }
+      renderSignature();
+    });
+  }
+
+  // Close modal
+  function closeCropModal() {
+    cropModal.hidden = true;
+    if (activeCropper) {
+      activeCropper.destroy();
+      activeCropper = null;
+    }
+  }
+
+  if (cancelBtn) cancelBtn.addEventListener('click', closeCropModal);
+  if (cropModal) {
+    cropModal.addEventListener('click', e => {
+      if (e.target === cropModal) closeCropModal();
+    });
+  }
+
+  // Apply Crop and Save
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      if (!activeCropper) return;
+      const canvas = activeCropper.getCroppedCanvas({
+        maxWidth: 500,
+        maxHeight: 500,
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high',
+      });
+      const croppedUrl = canvas.toDataURL('image/jpeg', 0.95);
+
+      if (State.active) {
+        if (cropTarget === 'avatar') {
+          State.active.data.avatar = croppedUrl;
+          setAvatarPreview(croppedUrl);
+        } else if (cropTarget === 'logo') {
+          State.active.data.logo = croppedUrl;
+          setLogoPreview(croppedUrl);
+        }
+      }
+
+      renderSignature();
+      closeCropModal();
     });
   }
 }
@@ -445,21 +792,49 @@ function initAvatarUpload() {
 function setAvatarPreview(dataUrl) {
   const preview   = document.getElementById('avatarPreview');
   const removeBtn = document.getElementById('removeAvatar');
+  const cropBtn   = document.getElementById('cropAvatarBtn');
   if (!preview) return;
   preview.innerHTML = `<img src="${dataUrl}" alt="Avatar preview" />`;
   if (removeBtn) removeBtn.style.display = 'inline-flex';
+  if (cropBtn) cropBtn.style.display = 'inline-flex';
 }
 
 function clearAvatarPreview() {
   const preview   = document.getElementById('avatarPreview');
   const removeBtn = document.getElementById('removeAvatar');
+  const cropBtn   = document.getElementById('cropAvatarBtn');
   if (preview) preview.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M4 20c0-4.418 3.582-7 8-7s8 2.582 8 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
   if (removeBtn) removeBtn.style.display = 'none';
+  if (cropBtn) cropBtn.style.display = 'none';
+}
+
+function setLogoPreview(dataUrl) {
+  const preview = document.getElementById('logoPreview');
+  const removeBtn = document.getElementById('removeLogo');
+  const cropBtn = document.getElementById('cropLogoBtn');
+  if (!preview) return;
+  preview.innerHTML = `<img src="${dataUrl}" alt="Logo preview" style="object-fit: contain; width: 100%; height: 100%;" />`;
+  if (removeBtn) removeBtn.style.display = 'inline-flex';
+  if (cropBtn) cropBtn.style.display = 'inline-flex';
+}
+
+function clearLogoPreview() {
+  const preview = document.getElementById('logoPreview');
+  const removeBtn = document.getElementById('removeLogo');
+  const cropBtn = document.getElementById('cropLogoBtn');
+  if (preview) preview.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 17L10 12L13 15L17 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  if (removeBtn) removeBtn.style.display = 'none';
+  if (cropBtn) cropBtn.style.display = 'none';
+}
+
+function toggleSocialCustomColorRow(show) {
+  const row = document.getElementById('socialIconCustomColorRow');
+  if (row) row.style.display = show ? 'block' : 'none';
 }
 
 /* ══════════════════════════════════════════════════════════════════
    PROFILE DROPDOWN
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 function initProfileDropdown() {
   const btn      = document.getElementById('profileMenuBtn');
@@ -509,7 +884,7 @@ function closeProfileDropdown() {
 
 /* ══════════════════════════════════════════════════════════════════
    MODAL
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 function openModal(mode, profileId = null, currentName = '') {
   State.pendingModal = { mode, profileId };
@@ -562,7 +937,7 @@ function initModal() {
 
 /* ══════════════════════════════════════════════════════════════════
    THEME TOGGLE
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 function initThemeToggle() {
   const btn = document.getElementById('themeToggle');
@@ -586,7 +961,7 @@ function initThemeToggle() {
 
 /* ══════════════════════════════════════════════════════════════════
    FORM EVENT BINDING
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 function bindFormInputs() {
   // All text inputs + selects → debounced re-render
@@ -608,8 +983,109 @@ function bindFormInputs() {
     });
   }
 
+  // Avatar size range
+  const avatarSizeRange = document.getElementById('avatarSize');
+  const avatarSizeVal   = document.getElementById('avatarSizeVal');
+  if (avatarSizeRange) {
+    avatarSizeRange.addEventListener('input', () => {
+      if (avatarSizeVal) avatarSizeVal.textContent = avatarSizeRange.value + 'px';
+      renderSignature();
+    });
+  }
+
+  // Logo size range
+  const logoSizeRange = document.getElementById('logoSize');
+  const logoSizeVal   = document.getElementById('logoSizeVal');
+  if (logoSizeRange) {
+    logoSizeRange.addEventListener('input', () => {
+      if (logoSizeVal) logoSizeVal.textContent = logoSizeRange.value + 'px';
+      renderSignature();
+    });
+  }
+
+  // Avatar top spacing slider
+  const avatarSpacingTopRange = document.getElementById('avatarSpacingTop');
+  const avatarSpacingTopVal   = document.getElementById('avatarSpacingTopVal');
+  if (avatarSpacingTopRange) {
+    avatarSpacingTopRange.addEventListener('input', () => {
+      if (avatarSpacingTopVal) avatarSpacingTopVal.textContent = avatarSpacingTopRange.value + 'px';
+      renderSignature();
+    });
+  }
+
+  // Avatar border width slider
+  const avatarBorderWidthRange = document.getElementById('avatarBorderWidth');
+  const avatarBorderWidthVal   = document.getElementById('avatarBorderWidthVal');
+  if (avatarBorderWidthRange) {
+    avatarBorderWidthRange.addEventListener('input', () => {
+      if (avatarBorderWidthVal) avatarBorderWidthVal.textContent = avatarBorderWidthRange.value + 'px';
+      renderSignature();
+    });
+  }
+
+  // Logo spacing slider
+  const logoSpacingRange = document.getElementById('logoSpacing');
+  const logoSpacingVal   = document.getElementById('logoSpacingVal');
+  if (logoSpacingRange) {
+    logoSpacingRange.addEventListener('input', () => {
+      if (logoSpacingVal) logoSpacingVal.textContent = logoSpacingRange.value + 'px';
+      renderSignature();
+    });
+  }
+
+  // Disclaimer size slider
+  const disclaimerSizeRange = document.getElementById('disclaimerSize');
+  const disclaimerSizeVal   = document.getElementById('disclaimerSizeVal');
+  if (disclaimerSizeRange) {
+    disclaimerSizeRange.addEventListener('input', () => {
+      if (disclaimerSizeVal) disclaimerSizeVal.textContent = disclaimerSizeRange.value + 'px';
+      renderSignature();
+    });
+  }
+
+  // Disclaimer top spacing slider
+  const disclaimerSpacingTopRange = document.getElementById('disclaimerSpacingTop');
+  const disclaimerSpacingTopVal   = document.getElementById('disclaimerSpacingTopVal');
+  if (disclaimerSpacingTopRange) {
+    disclaimerSpacingTopRange.addEventListener('input', () => {
+      if (disclaimerSpacingTopVal) disclaimerSpacingTopVal.textContent = disclaimerSpacingTopRange.value + 'px';
+      renderSignature();
+    });
+  }
+
+  // All custom color pickers (typography & avatar border & individual social colors)
+  const socialKeys = ['linkedin', 'twitter', 'instagram', 'github', 'dribbble', 'youtube', 'calendly', 'whatsapp'];
+  const allColorPickers = ['colorName', 'colorJobTitle', 'colorCompany', 'colorContact', 'colorContactHover', 'colorTagline', 'colorDisclaimer', 'avatarBorderColor', 'socialIconCustomColor'];
+  socialKeys.forEach(key => {
+    allColorPickers.push(`socialColor_${key}`);
+    allColorPickers.push(`socialHover_${key}`);
+  });
+
+  allColorPickers.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', Utils.throttle(() => {
+        renderSignature();
+      }, 80));
+    }
+  });
+
+  // Selects and custom shape selectors
+  const allSelectors = ['avatarShape', 'logoShape', 'showLogo', 'logoPlacement', 'socialIconColorMode', 'socialIconShape'];
+  allSelectors.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('change', () => {
+        if (id === 'socialIconColorMode') {
+          toggleSocialCustomColorRow(el.value === 'custom');
+        }
+        renderSignature();
+      });
+    }
+  });
+
   // Toggle switches
-  ['showDivider','showAvatar','showIcons','showTagline'].forEach(id => {
+  ['showDivider','showAvatar','showIcons','showTagline','showDisclaimer'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('change', renderSignature);
   });
@@ -625,7 +1101,7 @@ function bindFormInputs() {
 
 /* ══════════════════════════════════════════════════════════════════
    GLOBAL EVENT LISTENERS (cross-module)
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 function bindGlobalEvents() {
   // AI module applied data → re-render + switch tab
@@ -647,7 +1123,7 @@ function bindGlobalEvents() {
 
 /* ══════════════════════════════════════════════════════════════════
    COPY UTILS INIT
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 function initCopyUtils() {
   CopyUtils.init(
@@ -657,8 +1133,119 @@ function initCopyUtils() {
 }
 
 /* ══════════════════════════════════════════════════════════════════
+   BACKUP & EXPORT ACTIONS
+   ══════════════════════════════════════════════════════════════════ */
+
+function initBackupActions() {
+  const downloadHtmlBtn = document.getElementById('downloadHtmlBtn');
+  const exportBackupBtn = document.getElementById('exportBackupBtn');
+  const importBackupBtn = document.getElementById('importBackupBtn');
+  const importBackupInput = document.getElementById('importBackupInput');
+
+  // 1. Download HTML signature
+  if (downloadHtmlBtn) {
+    downloadHtmlBtn.addEventListener('click', () => {
+      const html = window.__currentHtml || '';
+      if (!html) {
+        Utils.showToast('⚠ Nothing to save. Please fill out some fields first.');
+        return;
+      }
+      
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const profileName = (State.active ? State.active.name : 'signature').toLowerCase().replace(/\s+/g, '_');
+      a.href = url;
+      a.download = `${profileName}_signature.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      Utils.showToast('✓ Signature HTML file downloaded! Save it to your exported-signatures folder.');
+      Utils.flashButton(downloadHtmlBtn, '✓ Saved!');
+    });
+  }
+
+  // 2. Export Profiles JSON Backup
+  if (exportBackupBtn) {
+    exportBackupBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // prevent dropdown close
+      
+      if (!State.profiles || !State.profiles.length) {
+        Utils.showToast('⚠ No profiles to backup.');
+        return;
+      }
+      
+      const backupData = JSON.stringify(State.profiles, null, 2);
+      const blob = new Blob([backupData], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'signatures_backup.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      Utils.showToast('✓ Backup downloaded as signatures_backup.json!');
+      closeProfileDropdown();
+    });
+  }
+
+  // 3. Import Profiles JSON Backup
+  if (importBackupBtn && importBackupInput) {
+    importBackupBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // prevent dropdown close
+      importBackupInput.click();
+    });
+
+    importBackupInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          
+          // Validate backup format
+          const isValid = Array.isArray(parsed) && parsed.length > 0 && parsed.every(p => p.id && p.name && p.data && p.options);
+          
+          if (isValid) {
+            State.profiles = parsed;
+            // Select the first imported profile as active
+            State.activeId = parsed[0].id;
+            saveProfiles();
+            
+            // Repopulate form and re-render everything completely
+            populateForm(State.active);
+            renderSignature();
+            renderProfileList();
+            updateProfileButton();
+            
+            Utils.showToast('✓ All signature profiles restored successfully!');
+          } else {
+            Utils.showToast('⚠ Invalid backup file structure. Must contain signature profiles.');
+          }
+        } catch(err) {
+          console.error(err);
+          Utils.showToast('⚠ Error parsing backup JSON file.');
+        }
+        
+        // Reset file input so the same file can be selected again
+        importBackupInput.value = '';
+        closeProfileDropdown();
+      };
+      
+      reader.readAsText(file);
+    });
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
    BOOTSTRAP
-══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 
 function boot() {
   // 1. Theme
@@ -679,10 +1266,11 @@ function boot() {
   // 5. Wire up all interactions
   initTabs();
   bindFormInputs();
-  initAvatarUpload();
+  initImageCropper();
   initProfileDropdown();
   initModal();
   initCopyUtils();
+  initBackupActions();
   PreviewRenderer.initClientTabs();
   bindGlobalEvents();
 

@@ -1249,7 +1249,7 @@ html:not(.dark) .ef-moon { opacity: 0; transform: scale(0.5) rotate(-90deg); }
 /* ─── SIGNATURE HTML CONTENT ─────────────────────────────────── */
 /* Ensure signature renders cleanly inside the preview */
 #signatureWrapper * { box-sizing: border-box; }
-#signatureWrapper a { color: var(--accent) !important; }
+#signatureWrapper a { color: inherit; }
 
 /* Fade-in for new previews */
 .sig-enter {
@@ -1258,4 +1258,38 @@ html:not(.dark) .ef-moon { opacity: 0; transform: scale(0.5) rotate(-90deg); }
 @keyframes sigFadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Premium Field Color Picker & Cropper Styles */
+.ef-field-color-picker {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--border-input);
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  overflow: hidden;
+  outline: none;
+  transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast);
+  display: inline-block;
+  vertical-align: middle;
+}
+.ef-field-color-picker:hover {
+  transform: scale(1.2);
+  border-color: var(--accent);
+}
+.ef-field-color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.ef-field-color-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
+}
+.ef-modal.max-w-md {
+  max-width: 440px !important;
+}
+.cropper-container {
+  border-radius: 8px;
+  overflow: hidden;
 }
