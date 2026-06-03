@@ -1307,6 +1307,24 @@ function initColorPickersHexCompanion() {
     textInput.maxLength = 7;
     textInput.title = 'Introduir codi hex';
 
+    // Apply inline styles to guarantee compact layout and prevent CSS caching/reset issues
+    const isLarge = colorInput.classList.contains('ef-color-input');
+    textInput.style.width = isLarge ? '48px' : '44px';
+    textInput.style.height = isLarge ? '18px' : '15px';
+    textInput.style.fontFamily = 'monospace';
+    textInput.style.fontSize = isLarge ? '9px' : '8px';
+    textInput.style.textAlign = 'center';
+    textInput.style.padding = '0';
+    textInput.style.border = '1px solid var(--border-input, rgba(255, 255, 255, 0.1))';
+    textInput.style.borderRadius = '3px';
+    textInput.style.background = 'var(--bg-card, #2a2b36)';
+    textInput.style.color = 'var(--text-primary, #ffffff)';
+    textInput.style.textTransform = 'uppercase';
+    textInput.style.display = 'inline-block';
+    textInput.style.verticalAlign = 'middle';
+    textInput.style.marginLeft = '2px';
+    textInput.style.transition = 'border-color 0.15s, box-shadow 0.15s';
+
     colorInput.parentNode.insertBefore(textInput, colorInput.nextSibling);
 
     colorInput.addEventListener('input', () => {
@@ -1329,11 +1347,21 @@ function initColorPickersHexCompanion() {
       }
     });
 
+    // Focus state inline styles
+    textInput.addEventListener('focus', () => {
+      textInput.style.borderColor = 'var(--accent, #6366f1)';
+      textInput.style.boxShadow = '0 0 0 2px rgba(99, 102, 241, 0.2)';
+      textInput.style.outline = 'none';
+    });
+
     textInput.addEventListener('blur', () => {
+      textInput.style.borderColor = 'var(--border-input, rgba(255, 255, 255, 0.1))';
+      textInput.style.boxShadow = 'none';
       textInput.value = colorInput.value.toUpperCase();
     });
   });
 }
+
 
 function syncAllColorTexts() {
   document.querySelectorAll('input[type="color"]').forEach(colorInput => {
