@@ -68,7 +68,7 @@ const SignatureGenerator = (() => {
     const iconUrl = `assets/icons/${key}.png`;
 
     return `<span style="display:inline-block;background-color:${bg};width:16px;height:16px;border-radius:${borderRadius};text-align:center;vertical-align:middle;margin-right:6px;line-height:16px;">` +
-           `<img src="${iconUrl}" width="9" height="9" alt="${key}" style="display:inline-block;vertical-align:middle;border:none;margin-top:-2px;" />` +
+           `<img src="${iconUrl}" width="9" height="9" alt="${key}" style="display:inline-block;vertical-align:middle;border:none;margin:0;" />` +
            `</span>`;
   }
 
@@ -114,8 +114,8 @@ const SignatureGenerator = (() => {
 
       // Use relative path for local Nginx preview, converted to absolute at export time
       const iconUrl = `assets/icons/${key}.png`;
-      links.push(`<a href="${href}" class="${uniqueClass}" target="_blank" rel="noopener" title="${icon.label}" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:${borderRadius};background-color:${bg};margin-right:5px;text-decoration:none;transition:background-color 150ms ease-in-out;">
-  <img src="${iconUrl}" width="13" height="13" alt="${icon.label}" style="display:block;" />
+      links.push(`<a href="${href}" class="${uniqueClass}" target="_blank" rel="noopener" title="${icon.label}" style="display:inline-block;text-align:center;vertical-align:middle;line-height:24px;width:24px;height:24px;border-radius:${borderRadius};background-color:${bg};margin-right:5px;text-decoration:none;transition:background-color 150ms ease-in-out;">
+  <img src="${iconUrl}" width="13" height="13" alt="${icon.label}" style="display:inline-block;vertical-align:middle;margin:0;border:none;" />
 </a>`);
     };
 
