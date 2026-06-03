@@ -1294,35 +1294,5 @@ html:not(.dark) .ef-moon { opacity: 0; transform: scale(0.5) rotate(-90deg); }
   overflow: hidden;
 }
 
-/* Companion Hex Text Input for Color Pickers */
-.ef-color-text-input {
-  width: 44px;
-  height: 15px;
-  font-family: monospace;
-  font-size: 8px !important;
-  text-align: center;
-  padding: 0;
-  border: 1px solid var(--border-input);
-  border-radius: 3px;
-  background: var(--bg-card);
-  color: var(--text-primary);
-  text-transform: uppercase;
-  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
-  display: inline-block;
-  vertical-align: middle;
-  margin-left: 2px;
-}
-.ef-color-text-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-  outline: none;
-}
-/* Adjust height slightly for larger color picker inputs like custom accent colors */
-.ef-color-input + .ef-color-text-input {
-  width: 48px;
-  height: 18px;
-  font-size: 9px !important;
-  margin-top: 0;
-}
 
 

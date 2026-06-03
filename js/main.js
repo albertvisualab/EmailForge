@@ -1291,83 +1291,67 @@ function initBackupActions() {
   }
 }
 
-/* ─── COLOR PICKERS HEX COMPANIONS ───────────────────────────── */
+/* ─── CUSTOM COLOR PICKERS (VANILLA-PICKER) ───────────────────── */
 
-function initColorPickersHexCompanion() {
+function initCustomColorPickers() {
   document.querySelectorAll('input[type="color"]').forEach(colorInput => {
-    if (colorInput.nextSibling && colorInput.nextSibling.classList && colorInput.nextSibling.classList.contains('ef-color-text-input')) {
-      return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = colorInput.id;
+    btn.className = colorInput.className;
+    btn.title = colorInput.title;
+    if (colorInput.hasAttribute('aria-label')) {
+      btn.setAttribute('aria-label', colorInput.getAttribute('aria-label'));
     }
 
-    const textInput = document.createElement('input');
-    textInput.type = 'text';
-    textInput.className = 'ef-color-text-input';
-    textInput.value = colorInput.value.toUpperCase();
-    textInput.placeholder = '#000000';
-    textInput.maxLength = 7;
-    textInput.title = 'Introduir codi hex';
+    const initialColor = colorInput.value || '#000000';
+    btn.dataset.color = initialColor;
+    btn.style.backgroundColor = initialColor;
 
-    // Apply inline styles to guarantee compact layout and prevent CSS caching/reset issues
-    const isLarge = colorInput.classList.contains('ef-color-input');
-    textInput.style.width = isLarge ? '48px' : '44px';
-    textInput.style.height = isLarge ? '18px' : '15px';
-    textInput.style.fontFamily = 'monospace';
-    textInput.style.fontSize = isLarge ? '9px' : '8px';
-    textInput.style.textAlign = 'center';
-    textInput.style.padding = '0';
-    textInput.style.border = '1px solid var(--border-input, rgba(255, 255, 255, 0.1))';
-    textInput.style.borderRadius = '3px';
-    textInput.style.background = 'var(--bg-card, #2a2b36)';
-    textInput.style.color = 'var(--text-primary, #ffffff)';
-    textInput.style.textTransform = 'uppercase';
-    textInput.style.display = 'inline-block';
-    textInput.style.verticalAlign = 'middle';
-    textInput.style.marginLeft = '2px';
-    textInput.style.transition = 'border-color 0.15s, box-shadow 0.15s';
+    // Replace the input with the button in the DOM
+    colorInput.parentNode.replaceChild(btn, colorInput);
 
-    colorInput.parentNode.insertBefore(textInput, colorInput.nextSibling);
-
-    colorInput.addEventListener('input', () => {
-      textInput.value = colorInput.value.toUpperCase();
-    });
-
-    textInput.addEventListener('input', () => {
-      let val = textInput.value.trim();
-      if (val && !val.startsWith('#')) {
-        val = '#' + val;
-      }
-      const isValidHex = /^#[0-9A-F]{6}$/i.test(val) || /^#[0-9A-F]{3}$/i.test(val);
-      if (isValidHex) {
-        if (val.length === 4) {
-          val = '#' + val[1] + val[1] + val[2] + val[2] + val[3] + val[3];
+    // Define .value getter/setter for compatibility
+    Object.defineProperty(btn, 'value', {
+      get() {
+        return this.dataset.color;
+      },
+      set(val) {
+        this.dataset.color = val;
+        this.style.backgroundColor = val;
+        if (this._picker) {
+          this._picker.setColor(val, true);
         }
-        colorInput.value = val;
-        colorInput.dispatchEvent(new Event('input', { bubbles: true }));
-        colorInput.dispatchEvent(new Event('change', { bubbles: true }));
+      },
+      configurable: true
+    });
+
+    // Create Vanilla-Picker instance
+    const picker = new Picker({
+      parent: btn,
+      popup: 'bottom',
+      color: initialColor,
+      alpha: false,
+      editor: true,
+      editorFormat: 'hex',
+      onChange: function(color) {
+        const hex = color.hex.substring(0, 7);
+        btn.dataset.color = hex;
+        btn.style.backgroundColor = hex;
+        // Trigger input/change to update preview
+        btn.dispatchEvent(new Event('input', { bubbles: true }));
+        btn.dispatchEvent(new Event('change', { bubbles: true }));
       }
     });
 
-    // Focus state inline styles
-    textInput.addEventListener('focus', () => {
-      textInput.style.borderColor = 'var(--accent, #6366f1)';
-      textInput.style.boxShadow = '0 0 0 2px rgba(99, 102, 241, 0.2)';
-      textInput.style.outline = 'none';
-    });
-
-    textInput.addEventListener('blur', () => {
-      textInput.style.borderColor = 'var(--border-input, rgba(255, 255, 255, 0.1))';
-      textInput.style.boxShadow = 'none';
-      textInput.value = colorInput.value.toUpperCase();
-    });
+    btn._picker = picker;
   });
 }
 
-
 function syncAllColorTexts() {
-  document.querySelectorAll('input[type="color"]').forEach(colorInput => {
-    const textInput = colorInput.nextSibling;
-    if (textInput && textInput.classList && textInput.classList.contains('ef-color-text-input')) {
-      textInput.value = colorInput.value.toUpperCase();
+  document.querySelectorAll('.ef-field-color-picker, .ef-color-input').forEach(btn => {
+    if (btn._picker && btn.value) {
+      btn._picker.setColor(btn.value, true);
     }
   });
 }
@@ -1383,6 +1367,9 @@ function boot() {
   // 2. Load persisted profiles
   loadProfiles();
 
+  // Initialize custom color pickers before populating form
+  initCustomColorPickers();
+
   // 3. Build UI components
   renderColorPresets();
   renderTemplateGrid();
@@ -1395,7 +1382,6 @@ function boot() {
   // 5. Wire up all interactions
   initTabs();
   bindFormInputs();
-  initColorPickersHexCompanion();
   initImageCropper();
   initProfileDropdown();
   initModal();
