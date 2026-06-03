@@ -230,7 +230,7 @@ const SignatureGenerator = (() => {
           ${data.logoUrl ? `<a href="${Utils.normaliseUrl(data.logoUrl)}" target="_blank" rel="noopener" style="text-decoration:none;display:block;">` : ''}
           <img src="${data.logo}" width="${logoSize}"
                alt="${Utils.escapeHtml(data.company || 'Logo')}"
-               style="width:${logoSize}px;height:auto;max-height:${logoSize}px;border-radius:${logoRadius};display:block;margin:0 auto;" />
+               style="width:${logoSize}px !important;height:auto !important;max-height:${logoSize}px;border-radius:${logoRadius};display:block;margin:0 auto;" />
           ${data.logoUrl ? `</a>` : ''}
         </td>
       </tr>
@@ -258,7 +258,7 @@ const SignatureGenerator = (() => {
     ${data.logoUrl ? `<a href="${Utils.normaliseUrl(data.logoUrl)}" target="_blank" rel="noopener" style="text-decoration:none;display:block;">` : ''}
     <img src="${data.logo}" width="${size}"
          alt="${Utils.escapeHtml(data.company || 'Logo')}"
-         style="width:${size}px;height:auto;max-height:${size}px;border-radius:${radius};display:block;" />
+         style="width:${size}px !important;height:auto !important;max-height:${size}px;border-radius:${radius};display:block;" />
     ${data.logoUrl ? `</a>` : ''}
   </td>
 </tr>`;
@@ -679,7 +679,7 @@ const SignatureGenerator = (() => {
         <td style="text-align:right;">
           ${data.logoUrl ? `<a href="${Utils.normaliseUrl(data.logoUrl)}" target="_blank" rel="noopener" style="text-decoration:none;display:inline-block;">` : ''}
           <img src="${data.logo}" width="${logoSize}"
-               style="display:inline-block;width:${logoSize}px;height:auto;max-height:${logoSize}px;border-radius:${logoRadius};" 
+               style="display:inline-block;width:${logoSize}px !important;height:auto !important;max-height:${logoSize}px;border-radius:${logoRadius};" 
                alt="${Utils.escapeHtml(data.company || 'Logo')}">
           ${data.logoUrl ? `</a>` : ''}
         </td>
