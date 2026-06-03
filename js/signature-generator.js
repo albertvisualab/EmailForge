@@ -67,7 +67,7 @@ const SignatureGenerator = (() => {
     // Use relative path for local Nginx preview, converted to absolute at export time
     const iconUrl = `assets/icons/${key}.png`;
 
-    return `<span style="display:inline-block;vertical-align:middle;background-color:${bg};width:10px;height:10px;padding:3px;border-radius:${borderRadius};margin-right:6px;line-height:0;font-size:0;">` +
+    return `<span style="display:inline-block;vertical-align:middle;background-color:${bg};width:10px;height:10px;padding:3px;border-radius:${borderRadius};margin-right:6px;line-height:0;font-size:0;box-sizing:content-box;">` +
            `<img src="${iconUrl}" width="10" height="10" alt="${key}" style="display:block;border:none;margin:0;padding:0;" />` +
            `</span>`;
   }
@@ -114,8 +114,8 @@ const SignatureGenerator = (() => {
 
       // Use relative path for local Nginx preview, converted to absolute at export time
       const iconUrl = `assets/icons/${key}.png`;
-      links.push(`<a href="${href}" class="${uniqueClass}" target="_blank" rel="noopener" title="${icon.label}" style="display:inline-block;vertical-align:middle;background-color:${bg};width:14px;height:14px;padding:5px;border-radius:${borderRadius};margin-right:5px;text-decoration:none;transition:background-color 150ms ease-in-out;line-height:0;font-size:0;">
-  <img src="${iconUrl}" width="14" height="14" alt="${icon.label}" style="display:block;border:none;margin:0;padding:0;" />
+      links.push(`<a href="${href}" class="${uniqueClass}" target="_blank" rel="noopener" title="${icon.label}" style="display:inline-block;text-align:center;vertical-align:middle;line-height:24px;width:24px;height:24px;border-radius:${borderRadius};background-color:${bg};margin-right:5px;text-decoration:none;transition:background-color 150ms ease-in-out;">
+  <img src="${iconUrl}" width="13" height="13" alt="${icon.label}" style="display:inline-block;vertical-align:middle;margin:0;border:none;" />
 </a>`);
     };
 
