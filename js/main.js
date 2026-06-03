@@ -35,7 +35,7 @@ const DEFAULT_PROFILE = {
     firstName: '', lastName: '', jobTitle: '', department: '',
     company: '', website: '', email: '', phone: '', address: '',
     tagline: '', avatar: null, originalAvatar: null, logo: null, originalLogo: null,
-    logoUrl: '',
+    logoUrl: '', avatarExternalUrl: '', logoExternalUrl: '',
     linkedin: '', twitter: '', instagram: '', github: '',
     dribbble: '', youtube: '', calendly: '', whatsapp: '',
     disclaimer: 'Important: The content of this email is confidential and intended for the recipient specified in message only. It is strictly forbidden to share any part of this message with any third party, without a written consent of the sender. If you received this message by mistake, please reply to this message and follow with its deletion, so that we can ensure such a mistake does not occur in the future.',
@@ -118,7 +118,7 @@ function readFormData() {
   const fields = [
     'firstName','lastName','jobTitle','department','company',
     'website','email','phone','address','tagline',
-    'logoUrl',
+    'logoUrl', 'avatarExternalUrl', 'logoExternalUrl',
     'linkedin','twitter','instagram','github',
     'dribbble','youtube','calendly','whatsapp',
     'disclaimer',
@@ -209,7 +209,7 @@ function populateForm(profile) {
   const fields = [
     'firstName','lastName','jobTitle','department','company',
     'website','email','phone','address','tagline',
-    'logoUrl',
+    'logoUrl', 'avatarExternalUrl', 'logoExternalUrl',
     'linkedin','twitter','instagram','github',
     'dribbble','youtube','calendly','whatsapp',
     'disclaimer',
@@ -220,15 +220,19 @@ function populateForm(profile) {
   });
 
   // Avatar preview
-  if (data.avatar) {
-    setAvatarPreview(data.avatar);
+  if (data.avatarExternalUrl) {
+    setAvatarPreview(data.avatarExternalUrl, true);
+  } else if (data.avatar) {
+    setAvatarPreview(data.avatar, false);
   } else {
     clearAvatarPreview();
   }
 
   // Logo preview
-  if (data.logo) {
-    setLogoPreview(data.logo);
+  if (data.logoExternalUrl) {
+    setLogoPreview(data.logoExternalUrl, true);
+  } else if (data.logo) {
+    setLogoPreview(data.logo, false);
   } else {
     clearLogoPreview();
   }
@@ -363,11 +367,28 @@ const renderSignature = Utils.debounce(function () {
     return;
   }
 
-  // Merge avatar & logo from state (base64 not in form)
-  data.avatar     = State.active?.data?.avatar || null;
+  // Merge avatar & logo from state/inputs (external URL takes precedence over base64)
+  data.avatar     = data.avatarExternalUrl || State.active?.data?.avatar || null;
   data.showAvatar = options.showAvatar;
-  data.logo       = State.active?.data?.logo || null;
+  data.logo       = data.logoExternalUrl || State.active?.data?.logo || null;
   data.showLogo   = options.showLogo;
+
+  // Update UI Previews based on presence of external URL or fallback base64
+  if (data.avatarExternalUrl) {
+    setAvatarPreview(data.avatarExternalUrl, true);
+  } else if (State.active?.data?.avatar) {
+    setAvatarPreview(State.active.data.avatar, false);
+  } else {
+    clearAvatarPreview();
+  }
+
+  if (data.logoExternalUrl) {
+    setLogoPreview(data.logoExternalUrl, true);
+  } else if (State.active?.data?.logo) {
+    setLogoPreview(State.active.data.logo, false);
+  } else {
+    clearLogoPreview();
+  }
 
   const html      = SignatureGenerator.generate(data, options);
   const plainText = SignatureGenerator.generatePlainText(data, options);
@@ -739,9 +760,12 @@ function initImageCropper() {
   if (avatarRemoveBtn) {
     avatarRemoveBtn.addEventListener('click', () => {
       clearAvatarPreview();
+      const urlInput = document.getElementById('avatarExternalUrl');
+      if (urlInput) urlInput.value = '';
       if (State.active) {
         State.active.data.avatar = null;
         State.active.data.originalAvatar = null;
+        State.active.data.avatarExternalUrl = '';
       }
       renderSignature();
     });
@@ -750,9 +774,12 @@ function initImageCropper() {
   if (logoRemoveBtn) {
     logoRemoveBtn.addEventListener('click', () => {
       clearLogoPreview();
+      const urlInput = document.getElementById('logoExternalUrl');
+      if (urlInput) urlInput.value = '';
       if (State.active) {
         State.active.data.logo = null;
         State.active.data.originalLogo = null;
+        State.active.data.logoExternalUrl = '';
       }
       renderSignature();
     });
@@ -802,14 +829,14 @@ function initImageCropper() {
   }
 }
 
-function setAvatarPreview(dataUrl) {
+function setAvatarPreview(dataUrl, isExternal = false) {
   const preview   = document.getElementById('avatarPreview');
   const removeBtn = document.getElementById('removeAvatar');
   const cropBtn   = document.getElementById('cropAvatarBtn');
   if (!preview) return;
   preview.innerHTML = `<img src="${dataUrl}" alt="Avatar preview" />`;
   if (removeBtn) removeBtn.style.display = 'inline-flex';
-  if (cropBtn) cropBtn.style.display = 'inline-flex';
+  if (cropBtn) cropBtn.style.display = isExternal ? 'none' : 'inline-flex';
 }
 
 function clearAvatarPreview() {
@@ -821,14 +848,14 @@ function clearAvatarPreview() {
   if (cropBtn) cropBtn.style.display = 'none';
 }
 
-function setLogoPreview(dataUrl) {
+function setLogoPreview(dataUrl, isExternal = false) {
   const preview = document.getElementById('logoPreview');
   const removeBtn = document.getElementById('removeLogo');
   const cropBtn = document.getElementById('cropLogoBtn');
   if (!preview) return;
   preview.innerHTML = `<img src="${dataUrl}" alt="Logo preview" style="object-fit: contain; width: 100%; height: 100%;" />`;
   if (removeBtn) removeBtn.style.display = 'inline-flex';
-  if (cropBtn) cropBtn.style.display = 'inline-flex';
+  if (cropBtn) cropBtn.style.display = isExternal ? 'none' : 'inline-flex';
 }
 
 function clearLogoPreview() {
