@@ -20,6 +20,7 @@ const SignatureGenerator = (() => {
     creative:  { id: 'creative',  label: 'Creative',  desc: 'Bold & expressive' },
     corporate: { id: 'corporate', label: 'Corporate', desc: 'Classic & trustworthy' },
     luxury:    { id: 'luxury',    label: 'Luxury',    desc: 'Refined & prestigious' },
+    hound:     { id: 'hound',     label: 'Hound',     desc: 'Centered & symmetrical' },
   };
 
   /* ─── Shared inline social icons (SVG data URIs) ─────────────── */
@@ -35,9 +36,34 @@ const SignatureGenerator = (() => {
     whatsapp:  { label: 'WhatsApp',  color: '#25D366', svg: `<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='white'><path d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z'/><path d='M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.984-1.406A9.962 9.962 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z'/></svg>` },
   };
 
+  /* ─── Shared inline contact icons (SVG data URIs) ────────────── */
+
+  const CONTACT_ICONS = {
+    phone:   `<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='white'><path d='M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-2.2 2.2a15.045 15.045 0 01-6.59-6.59l2.2-2.2c.28-.28.36-.67.25-1.02A11.36 11.36 0 018.5 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1z'/></svg>`,
+    email:   `<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='white'><path d='M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z'/></svg>`,
+    website: `<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><line x1='2' y1='12' x2='22' y2='12'></line><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'></path></svg>`,
+    address: `<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='white'><path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z'/></svg>`
+  };
+
   /* ─── Helper: encode SVG for use in img src ──────────────────── */
   function svgToDataUri(svgStr) {
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+  }
+
+  /* ─── Helper: build contact icon HTML ────────────────────────── */
+  function getContactIconHtml(key, options, accentColor) {
+    const showContactIcons = options ? options.showContactIcons : false;
+    if (!showContactIcons) return '';
+    const icon = CONTACT_ICONS[key];
+    if (!icon) return '';
+
+    const bg = accentColor || '#6366f1';
+    const shape = (options && options.contactIconShape) ? options.contactIconShape : 'square';
+    const borderRadius = shape === 'circle' ? '50%' : (shape === 'rounded' ? '3px' : '0px');
+
+    return `<span style="display:inline-block;background-color:${bg};width:16px;height:16px;border-radius:${borderRadius};text-align:center;vertical-align:middle;margin-right:6px;line-height:16px;">` +
+           `<img src="${svgToDataUri(icon)}" width="9" height="9" alt="${key}" style="display:inline-block;vertical-align:middle;border:none;margin-top:-2px;" />` +
+           `</span>`;
   }
 
   /* ─── Build social icons HTML row ────────────────────────────── */
@@ -263,8 +289,8 @@ const SignatureGenerator = (() => {
             </tr>
             ${data.jobTitle ? `<tr><td style="font-size:${fontSize}px;color:${cJob};font-weight:500;padding-bottom:4px;">${Utils.escapeHtml(data.jobTitle)}${data.company ? ` · <span style="color:${cCompany};">${Utils.escapeHtml(data.company)}</span>` : ''}</td></tr>` : ''}
             ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:${cTagline};font-style:italic;padding-bottom:6px;">${Utils.escapeHtml(data.tagline)}</td></tr>` : ''}
-            ${data.email ? `<tr><td style="font-size:${fontSize - 1}px;color:${cContact};"><a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.email)}</a>${data.phone ? ` &nbsp;·&nbsp; <a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.phone)}</a>` : ''}</td></tr>` : ''}
-            ${data.website ? `<tr><td style="font-size:${fontSize - 1}px;padding-top:2px;"><a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a></td></tr>` : ''}
+            ${data.email ? `<tr><td style="font-size:${fontSize - 1}px;color:${cContact};vertical-align:middle;">${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.email)}</a>${data.phone ? ` &nbsp;·&nbsp; ${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.phone)}</a>` : ''}</td></tr>` : ''}
+            ${data.website ? `<tr><td style="font-size:${fontSize - 1}px;padding-top:2px;vertical-align:middle;">${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a></td></tr>` : ''}
             ${social}
             ${logoRow(data, options, 'minimal')}
           </tbody>
@@ -304,12 +330,12 @@ const SignatureGenerator = (() => {
             ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:${cTagline};font-style:italic;padding-bottom:8px;">"${Utils.escapeHtml(data.tagline)}"</td></tr>` : ''}
             ${showDivider ? `<tr><td style="padding-bottom:8px;"><div style="height:1px;background:linear-gradient(to right,${accentColor},transparent);width:180px;"></div></td></tr>` : ''}
             <tr>
-              <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:1.8;">
+              <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:1.8;vertical-align:middle;">
                 ${[
-                  data.email ? `<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.email)}</a>` : '',
-                  data.phone ? `<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.phone)}</a>` : '',
-                  data.website ? `<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
-                  data.address ? `<span>${Utils.escapeHtml(data.address)}</span>` : '',
+                  data.email ? `${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.email)}</a>` : '',
+                  data.phone ? `${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.phone)}</a>` : '',
+                  data.website ? `${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
+                  data.address ? `${getContactIconHtml('address', options, accentColor)}<span style="color:${cContact};vertical-align:middle;">${Utils.escapeHtml(data.address)}</span>` : '',
                 ].filter(Boolean).join(' &nbsp;|&nbsp; ')}
               </td>
             </tr>
@@ -358,11 +384,11 @@ const SignatureGenerator = (() => {
           <tbody>
             ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:${cTagline};font-style:italic;padding-bottom:6px;">${Utils.escapeHtml(data.tagline)}</td></tr>` : ''}
             <tr>
-              <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:2;">
+              <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:2;vertical-align:middle;">
                 ${[
-                  data.email ? `<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;margin-right:12px;">&#9993; ${Utils.escapeHtml(data.email)}</a>` : '',
-                  data.phone ? `<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;margin-right:12px;">&#128222; ${Utils.escapeHtml(data.phone)}</a>` : '',
-                  data.website ? `<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">&#127758; ${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
+                  data.email ? `${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;margin-right:12px;vertical-align:middle;">${options.showContactIcons ? '' : '&#9993; '}${Utils.escapeHtml(data.email)}</a>` : '',
+                  data.phone ? `${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;margin-right:12px;vertical-align:middle;">${options.showContactIcons ? '' : '&#128222; '}${Utils.escapeHtml(data.phone)}</a>` : '',
+                  data.website ? `${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${options.showContactIcons ? '' : '&#127758; '}${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
                 ].filter(Boolean).join(' ')}
               </td>
             </tr>
@@ -424,11 +450,11 @@ const SignatureGenerator = (() => {
                 <table cellpadding="0" cellspacing="0" border="0">
                   <tbody>
                     <tr>
-                      <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:1.8;">
+                      <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:1.8;vertical-align:middle;">
                         ${[
-                          data.email ? `<a href="mailto:${data.email}" style="color:${accentColor};text-decoration:none;font-weight:500;">${Utils.escapeHtml(data.email)}</a>` : '',
-                          data.phone ? `<a href="tel:${data.phone}" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.phone)}</a>` : '',
-                          data.website ? `<a href="${Utils.normaliseUrl(data.website)}" style="color:${accentColor};text-decoration:none;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
+                          data.email ? `${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" style="color:${accentColor};text-decoration:none;font-weight:500;vertical-align:middle;">${Utils.escapeHtml(data.email)}</a>` : '',
+                          data.phone ? `${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.phone)}</a>` : '',
+                          data.website ? `${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" style="color:${accentColor};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
                          ].filter(Boolean).join(' &nbsp;&bull;&nbsp; ')}
                       </td>
                     </tr>
@@ -476,11 +502,11 @@ const SignatureGenerator = (() => {
             ${showDivider ? `<tr><td style="padding-bottom:8px;"><hr style="border:none;border-top:1px solid #e0e0e0;margin:0;" /></td></tr>` : ''}
             ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:${cTagline};font-style:italic;padding-bottom:6px;">${Utils.escapeHtml(data.tagline)}</td></tr>` : ''}
             <tr>
-              <td style="font-size:${fontSize - 1}px;line-height:1.8;color:${cContact};">
-                ${data.email ? `<span><a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.email)}</a></span><br>` : ''}
-                ${data.phone ? `<span><a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">T: ${Utils.escapeHtml(data.phone)}</a></span><br>` : ''}
-                ${data.website ? `<span><a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a></span><br>` : ''}
-                ${data.address ? `<span style="color:${cContact};opacity:0.8;">${Utils.escapeHtml(data.address)}</span>` : ''}
+              <td style="font-size:${fontSize - 1}px;line-height:1.8;color:${cContact};vertical-align:middle;">
+                ${data.email ? `<span style="vertical-align:middle;">${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.email)}</a></span><br>` : ''}
+                ${data.phone ? `<span style="vertical-align:middle;">${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${options.showContactIcons ? '' : 'T: '}${Utils.escapeHtml(data.phone)}</a></span><br>` : ''}
+                ${data.website ? `<span style="vertical-align:middle;">${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a></span><br>` : ''}
+                ${data.address ? `<span style="vertical-align:middle;">${getContactIconHtml('address', options, accentColor)}<span style="color:${cContact};opacity:0.8;vertical-align:middle;">${Utils.escapeHtml(data.address)}</span></span>` : ''}
               </td>
             </tr>
             ${social}
@@ -529,12 +555,12 @@ const SignatureGenerator = (() => {
                     ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:${cTagline};font-style:italic;letter-spacing:0.02em;padding-bottom:8px;">${Utils.escapeHtml(data.tagline)}</td></tr>` : ''}
                     ${showDivider ? `<tr><td style="padding-bottom:8px;"><div style="width:100%;height:1px;background:linear-gradient(to right,${gold},transparent);"></div></td></tr>` : ''}
                     <tr>
-                      <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:1.9;letter-spacing:0.01em;">
+                      <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:1.9;letter-spacing:0.01em;vertical-align:middle;">
                         ${[
-                          data.email ? `<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.email)}</a>` : '',
-                          data.phone ? `<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.phone)}</a>` : '',
-                          data.website ? `<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
-                          data.address ? `<span style="color:${cContact};opacity:0.8;">${Utils.escapeHtml(data.address)}</span>` : '',
+                          data.email ? `${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.email)}</a>` : '',
+                          data.phone ? `${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.phone)}</a>` : '',
+                          data.website ? `${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
+                          data.address ? `${getContactIconHtml('address', options, accentColor)}<span style="color:${cContact};opacity:0.8;vertical-align:middle;">${Utils.escapeHtml(data.address)}</span>` : '',
                         ].filter(Boolean).join(' &nbsp;·&nbsp; ')}
                       </td>
                     </tr>
@@ -549,6 +575,145 @@ const SignatureGenerator = (() => {
             </tr>
           </tbody>
         </table>
+      </td>
+    </tr>
+  </tbody>
+</table>`;
+  }
+
+  /* ── 7. HOUND ────────────────────────────────────────────────── */
+  function renderHound(data, options) {
+    const { accentColor, fontSize, fontFamily, showDivider, showTagline } = options;
+    const name = fullName(data);
+    const social = buildSocialIcons(data, options, accentColor);
+
+    const cName = options.colorName || '#3A3A3A';
+    const cJob = options.colorJobTitle || accentColor;
+    const cCompany = options.colorCompany || '#555555';
+    const cContact = options.colorContact || '#3a3a3a';
+    const cTagline = options.colorTagline || '#555555';
+
+    // Separator line logic
+    const dividerColor = accentColor || 'rgb(159,100,75)';
+    const separatorHtml = showDivider ? `
+<table cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+  <tbody>
+    <tr><td height="20" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
+    <tr><td color="${dividerColor}" width="auto" height="1" style="width:100%;border-bottom:1px solid ${dividerColor};border-left:none;display:block;font-size:1px;line-height:1px;">&nbsp;</td></tr>
+    <tr><td height="20" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
+  </tbody>
+</table>` : `
+<table cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+  <tbody>
+    <tr><td height="15" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>
+  </tbody>
+</table>`;
+
+    // Avatar section
+    const avatarSize = options.avatarSize || 60;
+    const avatarRadius = options.avatarShape === 'circle' ? '50%' : (options.avatarShape === 'rounded' ? '8px' : '0px');
+    const avatarHtml = (data.avatar && options.showAvatar) ? `
+      <tr>
+        <td style="text-align:center;padding-bottom:12px;">
+          <img src="${data.avatar}" width="${avatarSize}" height="${avatarSize}"
+               style="display:inline-block;width:${avatarSize}px;height:${avatarSize}px;max-width:${avatarSize}px;border-radius:${avatarRadius};object-fit:cover;display:block;margin:0 auto;" 
+               alt="${Utils.escapeHtml(name)}">
+        </td>
+      </tr>` : '';
+
+    // Contact details stacked vertically with icons (optional)
+    const contactsHtml = `
+      <table cellpadding="0" cellspacing="0" border="0" style="font-size:${fontSize}px;font-family:${fontFamily};color:${cContact};">
+        <tbody>
+          ${data.phone ? `
+            <tr style="vertical-align:middle" height="25">
+              ${options.showContactIcons ? `<td width="22" style="vertical-align:middle;">${getContactIconHtml('phone', options, accentColor)}</td>` : ''}
+              <td style="padding:0px;color:${cContact};vertical-align:middle;">
+                <a href="tel:${data.phone}" class="ef-contact-link" style="text-decoration:none;color:${cContact};font-size:${fontSize}px;" target="_blank">${Utils.escapeHtml(data.phone)}</a>
+              </td>
+            </tr>` : ''}
+          ${data.email ? `
+            <tr style="vertical-align:middle" height="25">
+              ${options.showContactIcons ? `<td width="22" style="vertical-align:middle;">${getContactIconHtml('email', options, accentColor)}</td>` : ''}
+              <td style="padding:0px;color:${cContact};vertical-align:middle;">
+                <a href="mailto:${data.email}" class="ef-contact-link" style="text-decoration:none;color:${cContact};font-size:${fontSize}px;" target="_blank">${Utils.escapeHtml(data.email)}</a>
+              </td>
+            </tr>` : ''}
+          ${data.website ? `
+            <tr style="vertical-align:middle" height="25">
+              ${options.showContactIcons ? `<td width="22" style="vertical-align:middle;">${getContactIconHtml('website', options, accentColor)}</td>` : ''}
+              <td style="padding:0px;color:${cContact};vertical-align:middle;">
+                <a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="text-decoration:none;color:${cContact};font-size:${fontSize}px;" target="_blank">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>
+              </td>
+            </tr>` : ''}
+          ${data.address ? `
+            <tr style="vertical-align:middle" height="25">
+              ${options.showContactIcons ? `<td width="22" style="vertical-align:middle;">${getContactIconHtml('address', options, accentColor)}</td>` : ''}
+              <td style="padding:0px;color:${cContact};vertical-align:middle;font-size:${fontSize}px;">
+                ${Utils.escapeHtml(data.address)}
+              </td>
+            </tr>` : ''}
+        </tbody>
+      </table>`;
+
+    // Right column: Logo and social icons
+    const logoSize = options.logoSize || 60;
+    const logoRadius = options.logoShape === 'circle' ? '50%' : (options.logoShape === 'rounded' ? '6px' : '0px');
+    const logoHtml = (data.logo && options.showLogo) ? `
+      <tr>
+        <td style="text-align:right;">
+          ${data.logoUrl ? `<a href="${Utils.normaliseUrl(data.logoUrl)}" target="_blank" rel="noopener" style="text-decoration:none;display:inline-block;">` : ''}
+          <img src="${data.logo}" width="${logoSize}"
+               style="display:inline-block;width:${logoSize}px;height:auto;max-height:${logoSize}px;border-radius:${logoRadius};" 
+               alt="${Utils.escapeHtml(data.company || 'Logo')}">
+          ${data.logoUrl ? `</a>` : ''}
+        </td>
+      </tr>
+      <tr><td height="10" style="font-size:1px;line-height:1px;">&nbsp;</td></tr>` : '';
+
+    const socialHtml = social ? `
+      <tr align="right">
+        <td>
+          <table cellpadding="0" cellspacing="0" border="0" align="right" style="margin-left:auto;margin-right:0px;">
+            <tbody>
+              ${social}
+            </tbody>
+          </table>
+        </td>
+      </tr>` : '';
+
+    return `<table cellpadding="0" cellspacing="0" border="0" style="min-width:450px;width:100%;max-width:500px;font-size:${fontSize}px;font-family:${fontFamily};color:${cContact};">
+  <tbody>
+    ${avatarHtml}
+    <tr style="text-align:center">
+      <td>
+        <h2 style="margin:0px;font-size:${fontSize + 4}px;color:${cName};font-weight:600">${Utils.escapeHtml(name)}</h2>
+        ${data.jobTitle ? `<p style="margin:0px;color:${cJob};font-size:${fontSize}px;line-height:22px;font-weight:500;">${Utils.escapeHtml(data.jobTitle)}${data.company ? ` · <span style="color:${cCompany}">${Utils.escapeHtml(data.company)}</span>` : ''}</p>` : ''}
+        ${showTagline && data.tagline ? `<p style="margin:2px 0 0;color:${cTagline};font-size:${fontSize - 1}px;font-style:italic;">"${Utils.escapeHtml(data.tagline)}"</p>` : ''}
+      </td>
+    </tr>
+    <tr>
+      <td>
+        ${separatorHtml}
+        <table cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+          <tbody>
+            <tr style="vertical-align:middle">
+              <td style="vertical-align:middle;">
+                ${contactsHtml}
+              </td>
+              <td width="15" style="font-size:1px;line-height:1px;">&nbsp;</td>
+              <td style="text-align:right;vertical-align:middle;">
+                <table cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+                  <tbody>
+                    ${logoHtml}
+                    ${socialHtml}
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        ${separatorHtml}
       </td>
     </tr>
   </tbody>
@@ -580,6 +745,7 @@ const SignatureGenerator = (() => {
       case 'creative':  html = renderCreative(data, options); break;
       case 'corporate': html = renderCorporate(data, options); break;
       case 'luxury':    html = renderLuxury(data, options); break;
+      case 'hound':     html = renderHound(data, options); break;
       case 'minimal':
       default:          html = renderMinimal(data, options); break;
     }

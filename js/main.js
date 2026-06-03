@@ -51,6 +51,8 @@ const DEFAULT_PROFILE = {
     showIcons:   true,
     showTagline: true,
     showDisclaimer: true,
+    showContactIcons: false,
+    contactIconShape: 'square',
     
     // Custom typography colors
     colorName:   '#111111',
@@ -147,6 +149,8 @@ function readOptions() {
     showIcons:   document.getElementById('showIcons')?.checked   ?? true,
     showTagline: document.getElementById('showTagline')?.checked ?? true,
     showDisclaimer: document.getElementById('showDisclaimer')?.checked ?? true,
+    showContactIcons: document.getElementById('showContactIcons')?.checked ?? false,
+    contactIconShape: document.getElementById('contactIconShape')?.value || 'square',
     
     // Custom colors
     colorName:   document.getElementById('colorName')?.value || '#111111',
@@ -309,6 +313,9 @@ function populateForm(profile) {
   const socialShapeSel = document.getElementById('socialIconShape');
   if (socialShapeSel) socialShapeSel.value = options.socialIconShape || 'circle';
 
+  const contactIconShapeSel = document.getElementById('contactIconShape');
+  if (contactIconShapeSel) contactIconShapeSel.value = options.contactIconShape || 'square';
+
   const socialCustomColorInput = document.getElementById('socialIconCustomColor');
   if (socialCustomColorInput) socialCustomColorInput.value = options.socialIconCustomColor || '#6366f1';
 
@@ -322,10 +329,10 @@ function populateForm(profile) {
     if (hoverInput) hoverInput.value = options[`socialHover_${key}`] || DEFAULT_PROFILE.options[`socialHover_${key}`];
   });
 
-  const toggles = ['showDivider','showAvatar','showLogo','showIcons','showTagline','showDisclaimer'];
+  const toggles = ['showDivider','showAvatar','showLogo','showIcons','showTagline','showDisclaimer','showContactIcons'];
   toggles.forEach(key => {
     const el = document.getElementById(key);
-    if (el) el.checked = options[key] ?? true;
+    if (el) el.checked = options[key] ?? (key === 'showContactIcons' ? false : true);
   });
 
   // Apply template selection
@@ -400,6 +407,12 @@ function loadProfiles() {
       }
       if (profile.options.disclaimerSpacingTop === undefined) {
         profile.options.disclaimerSpacingTop = 10;
+      }
+      if (profile.options.showContactIcons === undefined) {
+        profile.options.showContactIcons = false;
+      }
+      if (profile.options.contactIconShape === undefined) {
+        profile.options.contactIconShape = 'square';
       }
       return profile;
     });
@@ -1071,7 +1084,7 @@ function bindFormInputs() {
   });
 
   // Selects and custom shape selectors
-  const allSelectors = ['avatarShape', 'logoShape', 'showLogo', 'logoPlacement', 'socialIconColorMode', 'socialIconShape'];
+  const allSelectors = ['avatarShape', 'logoShape', 'showLogo', 'logoPlacement', 'socialIconColorMode', 'socialIconShape', 'contactIconShape'];
   allSelectors.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -1085,7 +1098,7 @@ function bindFormInputs() {
   });
 
   // Toggle switches
-  ['showDivider','showAvatar','showIcons','showTagline','showDisclaimer'].forEach(id => {
+  ['showDivider','showAvatar','showIcons','showTagline','showDisclaimer','showContactIcons'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('change', renderSignature);
   });
