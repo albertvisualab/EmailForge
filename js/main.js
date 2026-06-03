@@ -343,7 +343,13 @@ function populateForm(profile) {
   selectTemplate(options.template || 'minimal', false);
 
   // Apply accent color
-  PreviewRenderer.setAccentColor(options.accentColor || '#6366f1');
+  const accent = options.accentColor || '#6366f1';
+  PreviewRenderer.setAccentColor(accent);
+  const cp = document.getElementById('customColor');
+  if (cp) cp.value = accent;
+
+  // Sync companion text fields
+  syncAllColorTexts();
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -612,6 +618,9 @@ function renderColorPresets() {
 function applyAccentColor(hex) {
   if (State.active) State.active.options.accentColor = hex;
   PreviewRenderer.setAccentColor(hex);
+  const cp = document.getElementById('customColor');
+  if (cp) cp.value = hex;
+  syncAllColorTexts();
   // Refresh template thumbnails with new color
   renderTemplateGrid();
   renderSignature();
@@ -1278,9 +1287,61 @@ function initBackupActions() {
         closeProfileDropdown();
       };
       
-      reader.readAsText(file);
     });
   }
+}
+
+/* ─── COLOR PICKERS HEX COMPANIONS ───────────────────────────── */
+
+function initColorPickersHexCompanion() {
+  document.querySelectorAll('input[type="color"]').forEach(colorInput => {
+    if (colorInput.nextSibling && colorInput.nextSibling.classList && colorInput.nextSibling.classList.contains('ef-color-text-input')) {
+      return;
+    }
+
+    const textInput = document.createElement('input');
+    textInput.type = 'text';
+    textInput.className = 'ef-color-text-input';
+    textInput.value = colorInput.value.toUpperCase();
+    textInput.placeholder = '#000000';
+    textInput.maxLength = 7;
+    textInput.title = 'Introduir codi hex';
+
+    colorInput.parentNode.insertBefore(textInput, colorInput.nextSibling);
+
+    colorInput.addEventListener('input', () => {
+      textInput.value = colorInput.value.toUpperCase();
+    });
+
+    textInput.addEventListener('input', () => {
+      let val = textInput.value.trim();
+      if (val && !val.startsWith('#')) {
+        val = '#' + val;
+      }
+      const isValidHex = /^#[0-9A-F]{6}$/i.test(val) || /^#[0-9A-F]{3}$/i.test(val);
+      if (isValidHex) {
+        if (val.length === 4) {
+          val = '#' + val[1] + val[1] + val[2] + val[2] + val[3] + val[3];
+        }
+        colorInput.value = val;
+        colorInput.dispatchEvent(new Event('input', { bubbles: true }));
+        colorInput.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+
+    textInput.addEventListener('blur', () => {
+      textInput.value = colorInput.value.toUpperCase();
+    });
+  });
+}
+
+function syncAllColorTexts() {
+  document.querySelectorAll('input[type="color"]').forEach(colorInput => {
+    const textInput = colorInput.nextSibling;
+    if (textInput && textInput.classList && textInput.classList.contains('ef-color-text-input')) {
+      textInput.value = colorInput.value.toUpperCase();
+    }
+  });
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -1306,6 +1367,7 @@ function boot() {
   // 5. Wire up all interactions
   initTabs();
   bindFormInputs();
+  initColorPickersHexCompanion();
   initImageCropper();
   initProfileDropdown();
   initModal();
