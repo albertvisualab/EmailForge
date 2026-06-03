@@ -848,7 +848,8 @@ function initImageCropper() {
         imageSmoothingEnabled: true,
         imageSmoothingQuality: 'high',
       });
-      const croppedUrl = canvas.toDataURL('image/jpeg', 0.95);
+      const mimeType = cropTarget === 'logo' ? 'image/png' : 'image/jpeg';
+      const croppedUrl = canvas.toDataURL(mimeType, mimeType === 'image/jpeg' ? 0.95 : undefined);
 
       if (State.active) {
         if (cropTarget === 'avatar') {
