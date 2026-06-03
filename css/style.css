@@ -495,7 +495,7 @@ html:not(.dark) .ef-moon { opacity: 0; transform: scale(0.5) rotate(-90deg); }
 }
 
 .ef-field { display: flex; flex-direction: column; gap: 5px; }
-.ef-field-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ef-field-group { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }
 .ef-mt { margin-top: 4px; }
 
 .ef-label {
@@ -1294,5 +1294,49 @@ html:not(.dark) .ef-moon { opacity: 0; transform: scale(0.5) rotate(-90deg); }
   overflow: hidden;
 }
 
+/* Companion Hex Text Input for Color Pickers */
+.ef-color-text-input-small {
+  width: 44px;
+  height: 14px;
+  font-family: var(--font-mono);
+  font-size: 8.5px !important;
+  text-align: center;
+  padding: 0;
+  border: 1px solid var(--border-input);
+  border-radius: 3px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  text-transform: uppercase;
+  transition: border-color var(--dur-fast);
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 3px;
+  margin-right: 1px;
+}
+.ef-color-text-input-small:focus {
+  border-color: var(--accent);
+  outline: none;
+}
 
-
+.ef-color-text-input {
+  width: 50px;
+  height: 20px;
+  font-family: var(--font-mono);
+  font-size: 10px !important;
+  text-align: center;
+  padding: 0;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  text-transform: uppercase;
+  transition: border-color var(--dur-fast);
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 4px;
+  margin-top: 1px;
+}
+.ef-color-text-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}

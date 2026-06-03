@@ -38,6 +38,7 @@ const DEFAULT_PROFILE = {
     logoUrl: '', avatarExternalUrl: '', logoExternalUrl: '',
     linkedin: '', twitter: '', instagram: '', github: '',
     dribbble: '', youtube: '', calendly: '', whatsapp: '',
+    behance: '', substack: '', pinterest: '',
     disclaimer: 'Important: The content of this email is confidential and intended for the recipient specified in message only. It is strictly forbidden to share any part of this message with any third party, without a written consent of the sender. If you received this message by mistake, please reply to this message and follow with its deletion, so that we can ensure such a mistake does not occur in the future.',
   },
   options: {
@@ -92,6 +93,9 @@ const DEFAULT_PROFILE = {
     socialColor_youtube: '#FF0000', socialHover_youtube: '#b30000',
     socialColor_calendly: '#006BFF', socialHover_calendly: '#004b93',
     socialColor_whatsapp: '#25D366', socialHover_whatsapp: '#128C7E',
+    socialColor_behance: '#1769ff', socialHover_behance: '#004fd1',
+    socialColor_substack: '#FF6719', socialHover_substack: '#d9520e',
+    socialColor_pinterest: '#BD081C', socialHover_pinterest: '#990012',
   },
 };
 
@@ -121,6 +125,7 @@ function readFormData() {
     'logoUrl', 'avatarExternalUrl', 'logoExternalUrl',
     'linkedin','twitter','instagram','github',
     'dribbble','youtube','calendly','whatsapp',
+    'behance','substack','pinterest',
     'disclaimer',
   ];
   const data = {};
@@ -151,6 +156,7 @@ function readOptions() {
     showDisclaimer: document.getElementById('showDisclaimer')?.checked ?? true,
     showContactIcons: document.getElementById('showContactIcons')?.checked ?? false,
     contactIconShape: document.getElementById('contactIconShape')?.value || 'square',
+    contactIconColor: document.getElementById('contactIconColor')?.value || '#6366f1',
     
     // Custom colors
     colorName:   document.getElementById('colorName')?.value || '#111111',
@@ -198,6 +204,12 @@ function readOptions() {
     socialHover_calendly: document.getElementById('socialHover_calendly')?.value || '#004b93',
     socialColor_whatsapp: document.getElementById('socialColor_whatsapp')?.value || '#25D366',
     socialHover_whatsapp: document.getElementById('socialHover_whatsapp')?.value || '#128C7E',
+    socialColor_behance: document.getElementById('socialColor_behance')?.value || '#1769ff',
+    socialHover_behance: document.getElementById('socialHover_behance')?.value || '#004fd1',
+    socialColor_substack: document.getElementById('socialColor_substack')?.value || '#FF6719',
+    socialHover_substack: document.getElementById('socialHover_substack')?.value || '#d9520e',
+    socialColor_pinterest: document.getElementById('socialColor_pinterest')?.value || '#BD081C',
+    socialHover_pinterest: document.getElementById('socialHover_pinterest')?.value || '#990012',
   };
 }
 
@@ -212,6 +224,7 @@ function populateForm(profile) {
     'logoUrl', 'avatarExternalUrl', 'logoExternalUrl',
     'linkedin','twitter','instagram','github',
     'dribbble','youtube','calendly','whatsapp',
+    'behance','substack','pinterest',
     'disclaimer',
   ];
   fields.forEach(f => {
@@ -320,11 +333,14 @@ function populateForm(profile) {
   const contactIconShapeSel = document.getElementById('contactIconShape');
   if (contactIconShapeSel) contactIconShapeSel.value = options.contactIconShape || 'square';
 
+  const contactIconColorInput = document.getElementById('contactIconColor');
+  if (contactIconColorInput) contactIconColorInput.value = options.contactIconColor || '#6366f1';
+  
   const socialCustomColorInput = document.getElementById('socialIconCustomColor');
   if (socialCustomColorInput) socialCustomColorInput.value = options.socialIconCustomColor || '#6366f1';
 
   // Individual social colors
-  const socialKeys = ['linkedin', 'twitter', 'instagram', 'github', 'dribbble', 'youtube', 'calendly', 'whatsapp'];
+  const socialKeys = ['linkedin', 'twitter', 'instagram', 'github', 'dribbble', 'youtube', 'calendly', 'whatsapp', 'behance', 'substack', 'pinterest'];
   socialKeys.forEach(key => {
     const normalInput = document.getElementById(`socialColor_${key}`);
     if (normalInput) normalInput.value = options[`socialColor_${key}`] || DEFAULT_PROFILE.options[`socialColor_${key}`];
@@ -424,6 +440,17 @@ function loadProfiles() {
       // Ensure missing/new properties from DEFAULT_PROFILE are initialized
       profile.data = { ...DEFAULT_PROFILE.data, ...profile.data };
       profile.options = { ...DEFAULT_PROFILE.options, ...profile.options };
+      
+      // Ensure correct color initialization for new social networks in old profiles
+      const newKeys = ['behance', 'substack', 'pinterest'];
+      newKeys.forEach(key => {
+        if (profile.options[`socialColor_${key}`] === undefined || profile.options[`socialColor_${key}`] === null || profile.options[`socialColor_${key}`] === '') {
+          profile.options[`socialColor_${key}`] = DEFAULT_PROFILE.options[`socialColor_${key}`];
+        }
+        if (profile.options[`socialHover_${key}`] === undefined || profile.options[`socialHover_${key}`] === null || profile.options[`socialHover_${key}`] === '') {
+          profile.options[`socialHover_${key}`] = DEFAULT_PROFILE.options[`socialHover_${key}`];
+        }
+      });
       
       // If disclaimer is missing or empty, populate with DEFAULT_PROFILE disclaimer
       if (profile.data.disclaimer === undefined || profile.data.disclaimer === null || profile.data.disclaimer === '') {
@@ -620,10 +647,11 @@ function applyAccentColor(hex) {
   PreviewRenderer.setAccentColor(hex);
   const cp = document.getElementById('customColor');
   if (cp) cp.value = hex;
-  syncAllColorTexts();
   // Refresh template thumbnails with new color
   renderTemplateGrid();
   renderSignature();
+  // Sync companion text fields
+  syncAllColorTexts();
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -1103,8 +1131,8 @@ function bindFormInputs() {
   }
 
   // All custom color pickers (typography & avatar border & individual social colors)
-  const socialKeys = ['linkedin', 'twitter', 'instagram', 'github', 'dribbble', 'youtube', 'calendly', 'whatsapp'];
-  const allColorPickers = ['colorName', 'colorJobTitle', 'colorCompany', 'colorContact', 'colorContactHover', 'colorTagline', 'colorDisclaimer', 'avatarBorderColor', 'socialIconCustomColor'];
+  const socialKeys = ['linkedin', 'twitter', 'instagram', 'github', 'dribbble', 'youtube', 'calendly', 'whatsapp', 'behance', 'substack', 'pinterest'];
+  const allColorPickers = ['colorName', 'colorJobTitle', 'colorCompany', 'colorContact', 'colorContactHover', 'colorTagline', 'colorDisclaimer', 'avatarBorderColor', 'socialIconCustomColor', 'contactIconColor'];
   socialKeys.forEach(key => {
     allColorPickers.push(`socialColor_${key}`);
     allColorPickers.push(`socialHover_${key}`);
@@ -1182,6 +1210,141 @@ function initCopyUtils() {
 }
 
 /* ══════════════════════════════════════════════════════════════════
+   DATE FORMATTER & EXPORT DIRECTORY MANAGER
+   ══════════════════════════════════════════════════════════════════ */
+
+function getFormattedDate() {
+  const d = new Date();
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+const ExportDirManager = (() => {
+  const DB_NAME = 'ef_export_settings';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'settings';
+  const KEY_DIR_HANDLE = 'exportDirHandle';
+
+  let dirHandle = null;
+
+  function openDb() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME);
+        }
+      };
+      request.onsuccess = (e) => resolve(e.target.result);
+      request.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async function getSetting(key) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function setSetting(key, val) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.put(val, key);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function init() {
+    try {
+      if (window.showDirectoryPicker) {
+        dirHandle = await getSetting(KEY_DIR_HANDLE);
+        const folderBtn = document.getElementById('setExportDirBtn');
+        if (folderBtn) {
+          folderBtn.style.display = 'flex';
+          folderBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await selectDirectory();
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Error loading export directory handle:', err);
+    }
+  }
+
+  async function selectDirectory() {
+    try {
+      dirHandle = await window.showDirectoryPicker({
+        mode: 'readwrite'
+      });
+      await setSetting(KEY_DIR_HANDLE, dirHandle);
+      Utils.showToast('✓ Folder configured successfully!');
+      closeProfileDropdown();
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('Directory selection failed:', err);
+        Utils.showToast('⚠ Failed to configure directory.');
+      }
+    }
+  }
+
+  async function verifyPermission(fileHandle, readWrite) {
+    const options = {};
+    if (readWrite) {
+      options.mode = 'readwrite';
+    }
+    try {
+      if ((await fileHandle.queryPermission(options)) === 'granted') {
+        return true;
+      }
+      if ((await fileHandle.requestPermission(options)) === 'granted') {
+        return true;
+      }
+    } catch (err) {
+      console.error('Permission request failed:', err);
+    }
+    return false;
+  }
+
+  async function autoWriteFile(filename, content) {
+    if (!dirHandle) return false;
+    try {
+      const hasPermission = await verifyPermission(dirHandle, true);
+      if (!hasPermission) {
+        console.warn('Permission denied to access configured directory.');
+        return false;
+      }
+      
+      const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(content);
+      await writable.close();
+      return true;
+    } catch (err) {
+      console.error('Failed to auto-write file to configured directory:', err);
+      return false;
+    }
+  }
+
+  return {
+    init,
+    autoWriteFile,
+    hasConfigured: () => !!dirHandle
+  };
+})();
+
+/* ══════════════════════════════════════════════════════════════════
    BACKUP & EXPORT ACTIONS
    ══════════════════════════════════════════════════════════════════ */
 
@@ -1193,32 +1356,48 @@ function initBackupActions() {
 
   // 1. Download HTML signature
   if (downloadHtmlBtn) {
-    downloadHtmlBtn.addEventListener('click', () => {
+    downloadHtmlBtn.addEventListener('click', async () => {
       const html = window.__currentHtml || '';
       if (!html) {
         Utils.showToast('⚠ Nothing to save. Please fill out some fields first.');
         return;
       }
       
-      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      // Rewrite relative icon paths to absolute for export
+      const cleanHtml = CopyUtils.sanitise ? CopyUtils.sanitise(html) : html;
+      
+      const profileName = (State.active ? State.active.name : 'signature').toLowerCase().replace(/\s+/g, '_');
+      const formattedDate = getFormattedDate();
+      const filename = `${profileName}_signature_${formattedDate}.html`;
+
+      // Try auto-saving to local directory if configured
+      let autoSaved = false;
+      if (ExportDirManager.hasConfigured()) {
+        autoSaved = await ExportDirManager.autoWriteFile(filename, cleanHtml);
+      }
+      
+      const blob = new Blob([cleanHtml], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const profileName = (State.active ? State.active.name : 'signature').toLowerCase().replace(/\s+/g, '_');
       a.href = url;
-      a.download = `${profileName}_signature.html`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      Utils.showToast('✓ Signature HTML file downloaded! Save it to your exported-signatures folder.');
+      if (autoSaved) {
+        Utils.showToast(`✓ Saved to /exported-signatures/${filename} and browser downloads!`);
+      } else {
+        Utils.showToast(`✓ Signature HTML file downloaded as ${filename}!`);
+      }
       Utils.flashButton(downloadHtmlBtn, '✓ Saved!');
     });
   }
 
   // 2. Export Profiles JSON Backup
   if (exportBackupBtn) {
-    exportBackupBtn.addEventListener('click', (e) => {
+    exportBackupBtn.addEventListener('click', async (e) => {
       e.stopPropagation(); // prevent dropdown close
       
       if (!State.profiles || !State.profiles.length) {
@@ -1227,17 +1406,30 @@ function initBackupActions() {
       }
       
       const backupData = JSON.stringify(State.profiles, null, 2);
+      const formattedDate = getFormattedDate();
+      const filename = `signatures_backup_${formattedDate}.json`;
+
+      // Try auto-saving to local directory if configured
+      let autoSaved = false;
+      if (ExportDirManager.hasConfigured()) {
+        autoSaved = await ExportDirManager.autoWriteFile(filename, backupData);
+      }
+      
       const blob = new Blob([backupData], { type: 'application/json;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'signatures_backup.json';
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      Utils.showToast('✓ Backup downloaded as signatures_backup.json!');
+      if (autoSaved) {
+        Utils.showToast(`✓ Backup saved to /exported-signatures/${filename} and browser downloads!`);
+      } else {
+        Utils.showToast(`✓ Backup downloaded as ${filename}!`);
+      }
       closeProfileDropdown();
     });
   }
@@ -1287,71 +1479,74 @@ function initBackupActions() {
         closeProfileDropdown();
       };
       
+      reader.readAsText(file);
     });
   }
 }
 
-/* ─── CUSTOM COLOR PICKERS (VANILLA-PICKER) ───────────────────── */
+/* ─── COLOR PICKERS HEX COMPANIONS ───────────────────────────── */
 
-function initCustomColorPickers() {
+function initColorPickersHexCompanion() {
   document.querySelectorAll('input[type="color"]').forEach(colorInput => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.id = colorInput.id;
-    btn.className = colorInput.className;
-    btn.title = colorInput.title;
-    if (colorInput.hasAttribute('aria-label')) {
-      btn.setAttribute('aria-label', colorInput.getAttribute('aria-label'));
+    // Avoid double initialization
+    if (colorInput.nextSibling && colorInput.nextSibling.classList && (colorInput.nextSibling.classList.contains('ef-color-text-input') || colorInput.nextSibling.classList.contains('ef-color-text-input-small'))) {
+      return;
     }
 
-    const initialColor = colorInput.value || '#000000';
-    btn.dataset.color = initialColor;
-    btn.style.backgroundColor = initialColor;
+    const textInput = document.createElement('input');
+    textInput.type = 'text';
+    
+    // Choose appropriate class name depending on size
+    const isSmall = colorInput.classList.contains('ef-field-color-picker');
+    textInput.className = isSmall ? 'ef-color-text-input-small' : 'ef-color-text-input';
+    textInput.value = colorInput.value.replace('#', '').toUpperCase();
+    textInput.placeholder = 'FFF';
+    textInput.maxLength = 6;
+    textInput.title = 'Color HEX';
 
-    // Replace the input with the button in the DOM
-    colorInput.parentNode.replaceChild(btn, colorInput);
+    // Insert text input directly after the color input
+    colorInput.parentNode.insertBefore(textInput, colorInput.nextSibling);
 
-    // Define .value getter/setter for compatibility
-    Object.defineProperty(btn, 'value', {
-      get() {
-        return this.dataset.color;
-      },
-      set(val) {
-        this.dataset.color = val;
-        this.style.backgroundColor = val;
-        if (this._picker) {
-          this._picker.setColor(val, true);
-        }
-      },
-      configurable: true
+    // Sync from color picker to text field
+    colorInput.addEventListener('input', () => {
+      textInput.value = colorInput.value.replace('#', '').toUpperCase();
     });
 
-    // Create Vanilla-Picker instance
-    const picker = new Picker({
-      parent: btn,
-      popup: 'bottom',
-      color: initialColor,
-      alpha: false,
-      editor: true,
-      editorFormat: 'hex',
-      onChange: function(color) {
-        const hex = color.hex.substring(0, 7);
-        btn.dataset.color = hex;
-        btn.style.backgroundColor = hex;
-        // Trigger input/change to update preview
-        btn.dispatchEvent(new Event('input', { bubbles: true }));
-        btn.dispatchEvent(new Event('change', { bubbles: true }));
+    // Sync from text field to color picker (validation + cleaning)
+    textInput.addEventListener('input', () => {
+      let val = textInput.value.trim().toUpperCase();
+      // Remove leading hash if typed or pasted
+      if (val.startsWith('#')) {
+        val = val.substring(1);
+      }
+      // Remove any non-hex characters
+      val = val.replace(/[^0-9A-F]/g, '');
+      textInput.value = val;
+
+      if (val.length === 3 || val.length === 6) {
+        let hexColor = '#' + val;
+        if (val.length === 3) {
+          hexColor = '#' + val[0] + val[0] + val[1] + val[1] + val[2] + val[2];
+        }
+        colorInput.value = hexColor;
+        // Trigger both input and change events to update the rendering and active profile state
+        colorInput.dispatchEvent(new Event('input', { bubbles: true }));
+        colorInput.dispatchEvent(new Event('change', { bubbles: true }));
       }
     });
 
-    btn._picker = picker;
+    // Clean formatting on blur
+    textInput.addEventListener('blur', () => {
+      textInput.value = colorInput.value.replace('#', '').toUpperCase();
+    });
   });
 }
 
 function syncAllColorTexts() {
-  document.querySelectorAll('.ef-field-color-picker, .ef-color-input').forEach(btn => {
-    if (btn._picker && btn.value) {
-      btn._picker.setColor(btn.value, true);
+  document.querySelectorAll('input[type="color"]').forEach(colorInput => {
+    const textInput = colorInput.nextSibling;
+    if (textInput && textInput.classList && (textInput.classList.contains('ef-color-text-input') || textInput.classList.contains('ef-color-text-input-small'))) {
+      textInput.value = colorInput.value.replace('#', '').toUpperCase();
     }
   });
 }
@@ -1367,9 +1562,6 @@ function boot() {
   // 2. Load persisted profiles
   loadProfiles();
 
-  // Initialize custom color pickers before populating form
-  initCustomColorPickers();
-
   // 3. Build UI components
   renderColorPresets();
   renderTemplateGrid();
@@ -1382,11 +1574,13 @@ function boot() {
   // 5. Wire up all interactions
   initTabs();
   bindFormInputs();
+  initColorPickersHexCompanion();
   initImageCropper();
   initProfileDropdown();
   initModal();
   initCopyUtils();
   initBackupActions();
+  ExportDirManager.init();
   PreviewRenderer.initClientTabs();
   bindGlobalEvents();
 

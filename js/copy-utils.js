@@ -19,7 +19,13 @@ const CopyUtils = (() => {
    * @returns {string}
    */
   function sanitise(html) {
-    return html.replace(/<script[\s\S]*?<\/script>/gi, '');
+    let clean = html.replace(/<script[\s\S]*?<\/script>/gi, '');
+    
+    // Replace relative icon paths with absolute GitHub Pages production paths
+    const productionBaseUrl = 'https://albertvisualab.github.io/EmailForge/';
+    clean = clean.replace(/(src=")(?:\.?\/)?(assets\/icons\/[^"]+\.png")/g, `$1${productionBaseUrl}$2`);
+    
+    return clean;
   }
 
   /**
@@ -175,6 +181,7 @@ ${clean}
 
   return {
     init,
+    sanitise,
     copyHtml,
     copyForGmail,
     copyForOutlook,
