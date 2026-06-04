@@ -82,6 +82,34 @@
   <li><b>Comportament del disseny:</b> El botó <i>Crop</i> s'oculta automàticament per a imatges externes ja que s'enllacen directament sense passar pel processador local. Si buides la URL externa, l'aplicació restaurarà la imatge local retallada que tenies guardada en aquest perfil.</li>
 </ul>
 
+<h3 style="color: #97A788;">C. Recomanacions de Mida i Format per a Imatges</h3>
+<p>Per garantir que la teva signatura es vegi nítida en qualsevol pantalla (incloses les d'alta densitat o Retina) i que el correu no pesi massa, segueix aquestes pautes:</p>
+<table style="width: 100%; border-collapse: collapse; margin-top: 15px; background-color: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+  <tr style="background-color: #97A788; color: #F9F4EF;">
+    <th style="padding: 10px; text-align: left; border: 1px solid #d1c8b4;">Tipus d'Imatge</th>
+    <th style="padding: 10px; text-align: left; border: 1px solid #d1c8b4;">Format Recomanat</th>
+    <th style="padding: 10px; text-align: left; border: 1px solid #d1c8b4;">Mida en Píxels (px)</th>
+    <th style="padding: 10px; text-align: left; border: 1px solid #d1c8b4;">Pes de Fitxer (MB/KB)</th>
+  </tr>
+  <tr style="color: #141313; background-color: #ffffff;">
+    <td style="padding: 10px; border: 1px solid #e0d5c1;"><b>Foto de Perfil (Avatar)</b></td>
+    <td style="padding: 10px; border: 1px solid #e0d5c1;"><b>JPG</b> o <b>PNG</b></td>
+    <td style="padding: 10px; border: 1px solid #e0d5c1;"><b>150px a 300px</b><br>(quadrada, per un retall òptim)</td>
+    <td style="padding: 10px; border: 1px solid #e0d5c1;"><b>&lt; 500 KB</b><br>(recomanat en lloc de MB)</td>
+  </tr>
+  <tr style="color: #141313; background-color: #faf7f2;">
+    <td style="padding: 10px; border: 1px solid #e0d5c1;"><b>Logotip Corporatiu</b></td>
+    <td style="padding: 10px; border: 1px solid #e0d5c1;"><b>PNG Transparent</b> (amb canal alfa)</td>
+    <td style="padding: 10px; border: 1px solid #e0d5c1;"><b>150px a 300px</b> de costat major</td>
+    <td style="padding: 10px; border: 1px solid #e0d5c1;"><b>&lt; 300 KB</b><br>(com més lleuger, millor)</td>
+  </tr>
+</table>
+
+<blockquote style="background-color: #f1ebd8; border-left: 4px solid #D6B972; padding: 10px 15px; margin: 15px 0; font-size: 0.95em;">
+  <b>⚠️ Avís sobre formats WebP i transparències a Gmail:</b> 
+  El <i>Google Image Proxy</i> de Gmail té problemes coneguts en processar la transparència de fitxers en format <code>.webp</code>, podent substituir el fons transparent per requadres o barres de color negre/sòlids. Per a logotips amb fons transparents, <b>és imprescindible utilitzar el format PNG</b> per garantir un comportament òptim en rebre el correu.
+</blockquote>
+
 <h2 style="color: #D6B972; margin-top: 40px; border-bottom: 1px solid #e0d5c1; padding-bottom: 5px;">🏷️ 4. Icones de Contacte Opcionals</h2>
 <p>Per afegir dinamisme visual a les teves dades, pots activar la casella <b>Show contact icons</b> a la pestanya <i>Design</i>:</p>
 <ul>
