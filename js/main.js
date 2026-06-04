@@ -62,9 +62,11 @@ const DEFAULT_PROFILE = {
     colorContact: '#666666',
     colorContactHover: '#6366f1',
     colorTagline: '#999999',
-    colorDisclaimer: '#666666',
+    colorDisclaimer: '#969696',
     disclaimerSize: 10,
     disclaimerSpacingTop: 10,
+    contactLineHeight: 24,
+    socialSpacingTop: 10,
     
     // Avatar design options
     avatarSize: 60,
@@ -165,9 +167,11 @@ function readOptions() {
     colorContact: document.getElementById('colorContact')?.value || '#666666',
     colorContactHover: document.getElementById('colorContactHover')?.value || '#6366f1',
     colorTagline: document.getElementById('colorTagline')?.value || '#999999',
-    colorDisclaimer: document.getElementById('colorDisclaimer')?.value || '#666666',
+    colorDisclaimer: document.getElementById('colorDisclaimer')?.value || '#969696',
     disclaimerSize: parseInt(document.getElementById('disclaimerSize')?.value || 10),
     disclaimerSpacingTop: parseInt(document.getElementById('disclaimerSpacingTop')?.value || 10),
+    contactLineHeight: parseInt(document.getElementById('contactLineHeight')?.value || 24),
+    socialSpacingTop: parseInt(document.getElementById('socialSpacingTop')?.value || 10),
     
     // Avatar size, shape, spacing, border
     avatarSize:        parseInt(document.getElementById('avatarSize')?.value || 60),
@@ -338,6 +342,19 @@ function populateForm(profile) {
   
   const socialCustomColorInput = document.getElementById('socialIconCustomColor');
   if (socialCustomColorInput) socialCustomColorInput.value = options.socialIconCustomColor || '#6366f1';
+
+  // Advanced spacing
+  const contactLineHeightRange = document.getElementById('contactLineHeight');
+  if (contactLineHeightRange) {
+    contactLineHeightRange.value = options.contactLineHeight !== undefined ? options.contactLineHeight : 24;
+    document.getElementById('contactLineHeightVal').textContent = (options.contactLineHeight !== undefined ? options.contactLineHeight : 24) + 'px';
+  }
+
+  const socialSpacingTopRange = document.getElementById('socialSpacingTop');
+  if (socialSpacingTopRange) {
+    socialSpacingTopRange.value = options.socialSpacingTop !== undefined ? options.socialSpacingTop : 10;
+    document.getElementById('socialSpacingTopVal').textContent = (options.socialSpacingTop !== undefined ? options.socialSpacingTop : 10) + 'px';
+  }
 
   // Individual social colors
   const socialKeys = ['linkedin', 'twitter', 'instagram', 'github', 'dribbble', 'youtube', 'calendly', 'whatsapp', 'behance', 'substack', 'pinterest'];
@@ -1127,6 +1144,26 @@ function bindFormInputs() {
   if (disclaimerSpacingTopRange) {
     disclaimerSpacingTopRange.addEventListener('input', () => {
       if (disclaimerSpacingTopVal) disclaimerSpacingTopVal.textContent = disclaimerSpacingTopRange.value + 'px';
+      renderSignature();
+    });
+  }
+
+  // Contact row spacing slider
+  const contactLineHeightRange = document.getElementById('contactLineHeight');
+  const contactLineHeightVal   = document.getElementById('contactLineHeightVal');
+  if (contactLineHeightRange) {
+    contactLineHeightRange.addEventListener('input', () => {
+      if (contactLineHeightVal) contactLineHeightVal.textContent = contactLineHeightRange.value + 'px';
+      renderSignature();
+    });
+  }
+
+  // Socials top spacing slider
+  const socialSpacingTopRange = document.getElementById('socialSpacingTop');
+  const socialSpacingTopVal   = document.getElementById('socialSpacingTopVal');
+  if (socialSpacingTopRange) {
+    socialSpacingTopRange.addEventListener('input', () => {
+      if (socialSpacingTopVal) socialSpacingTopVal.textContent = socialSpacingTopRange.value + 'px';
       renderSignature();
     });
   }

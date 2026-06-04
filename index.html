@@ -395,7 +395,7 @@
             <div class="ef-section-label">Legal Disclaimer</div>
             <div class="flex items-center gap-1">
               <span class="text-[10px] opacity-60">Color:</span>
-              <input type="color" id="colorDisclaimer" class="ef-field-color-picker" value="#666666" title="Disclaimer color" />
+              <input type="color" id="colorDisclaimer" class="ef-field-color-picker" value="#969696" title="Disclaimer color" />
             </div>
           </div>
 
@@ -536,6 +536,25 @@
               <option value="rounded">Rounded</option>
               <option value="circle">Circle</option>
             </select>
+          </div>
+
+          <div class="ef-divider"></div>
+          <div class="ef-section-label">Advanced Spacing</div>
+          <div class="grid grid-cols-2 gap-3 mt-2">
+            <div class="ef-field">
+              <label class="ef-label" for="contactLineHeight">Contact Row Spacing</label>
+              <div class="ef-range-row">
+                <input type="range" id="contactLineHeight" class="ef-range" min="18" max="36" value="24" step="1" />
+                <span class="ef-range-val" id="contactLineHeightVal">24px</span>
+              </div>
+            </div>
+            <div class="ef-field">
+              <label class="ef-label" for="socialSpacingTop">Socials Top Spacing</label>
+              <div class="ef-range-row">
+                <input type="range" id="socialSpacingTop" class="ef-range" min="0" max="40" value="10" step="2" />
+                <span class="ef-range-val" id="socialSpacingTopVal">10px</span>
+              </div>
+            </div>
           </div>
         </div>
 
