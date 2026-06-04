@@ -17,9 +17,6 @@
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css?v=1.1" />
 
-  <!-- Cropper.js -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
   <!-- Vanilla-Picker -->
   <script src="https://unpkg.com/vanilla-picker@2/dist/vanilla-picker.min.js"></script>
@@ -214,10 +211,6 @@
                 <span class="text-[10px] opacity-60">Color:</span>
                 <input type="color" id="colorContact" class="ef-field-color-picker" value="#666666" title="Contact info color" />
               </div>
-              <div class="flex items-center gap-1">
-                <span class="text-[10px] opacity-60">Hover:</span>
-                <input type="color" id="colorContactHover" class="ef-field-color-picker" value="#6366f1" title="Contact info hover color" />
-              </div>
             </div>
           </div>
 
@@ -249,21 +242,10 @@
             <div class="ef-avatar-preview" id="avatarPreview" aria-label="Avatar preview">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M4 20c0-4.418 3.582-7 8-7s8 2.582 8 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             </div>
-            <div class="ef-avatar-controls">
-              <label class="ef-btn-secondary ef-upload-label" for="avatarUpload" role="button" tabindex="0">
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 10v2a2 2 0 002 2h8a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8 2v8M5 5l3-3 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Upload Photo
-              </label>
-              <input type="file" id="avatarUpload" accept="image/*" class="sr-only" aria-label="Upload avatar image" />
-              <div class="flex gap-2">
-                <button class="ef-btn-ghost text-xs" id="cropAvatarBtn" title="Crop avatar" style="display:none">Crop</button>
-                <button class="ef-btn-ghost ef-remove-avatar text-xs" id="removeAvatar" title="Remove avatar" style="display:none">Remove</button>
-              </div>
-            </div>
           </div>
 
           <div class="ef-field mt-2">
-            <label class="ef-label" for="avatarExternalUrl">Or photo URL (hotlink)</label>
+            <label class="ef-label" for="avatarExternalUrl">Photo URL (hotlink)</label>
             <input class="ef-input text-xs" type="url" id="avatarExternalUrl" placeholder="https://example.com/la-teva-foto.jpg" />
           </div>
 
@@ -319,21 +301,10 @@
             <div class="ef-avatar-preview" id="logoPreview" aria-label="Logo preview" style="border-radius: var(--radius-sm);">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 17L10 12L13 15L17 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
-            <div class="ef-avatar-controls">
-              <label class="ef-btn-secondary ef-upload-label" for="logoUpload" role="button" tabindex="0">
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 10v2a2 2 0 002 2h8a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8 2v8M5 5l3-3 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Upload Logo
-              </label>
-              <input type="file" id="logoUpload" accept="image/*" class="sr-only" aria-label="Upload company logo" />
-              <div class="flex gap-2">
-                <button class="ef-btn-ghost text-xs" id="cropLogoBtn" title="Crop logo" style="display:none">Crop</button>
-                <button class="ef-btn-ghost ef-remove-avatar text-xs" id="removeLogo" title="Remove logo" style="display:none">Remove</button>
-              </div>
-            </div>
           </div>
 
           <div class="ef-field mt-2">
-            <label class="ef-label" for="logoExternalUrl">Or logo URL (hotlink)</label>
+            <label class="ef-label" for="logoExternalUrl">Logo URL (hotlink)</label>
             <input class="ef-input text-xs" type="url" id="logoExternalUrl" placeholder="https://example.com/el-teu-logo.png" />
           </div>
 
@@ -935,22 +906,6 @@
     </div>
   </div>
 
-  <!-- ─── IMAGE CROP MODAL ───────────────────────────── -->
-  <div class="ef-modal-overlay" id="cropModalOverlay" role="dialog" aria-modal="true" aria-label="Crop your image" hidden>
-    <div class="ef-modal max-w-md w-full">
-      <h3 class="ef-modal-title">Crop Image</h3>
-      <p class="ef-modal-desc">Adjust the selection box to crop your photo or logo perfectly.</p>
-      
-      <div class="my-4 max-h-[260px] overflow-hidden flex items-center justify-center bg-black/10 dark:bg-black/40 rounded-lg p-2">
-        <img id="cropImageSource" src="" alt="Source image for cropping" class="max-w-full max-h-[220px] block" />
-      </div>
-      
-      <div class="ef-modal-actions mt-6">
-        <button class="ef-btn-secondary" id="cancelCropModal">Cancel</button>
-        <button class="ef-btn-primary" id="saveCropModal">Apply Crop</button>
-      </div>
-    </div>
-  </div>
 
   <!-- ─── SCRIPTS ─────────────────────────────────────── -->
   <script src="js/utils.js?v=2"></script>

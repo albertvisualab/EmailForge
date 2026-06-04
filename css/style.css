@@ -1260,7 +1260,7 @@ html:not(.dark) .ef-moon { opacity: 0; transform: scale(0.5) rotate(-90deg); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Premium Field Color Picker & Cropper Styles */
+/* Premium Field Color Picker Styles */
 .ef-field-color-picker {
   width: 18px;
   height: 18px;
@@ -1288,10 +1288,6 @@ html:not(.dark) .ef-moon { opacity: 0; transform: scale(0.5) rotate(-90deg); }
 }
 .ef-modal.max-w-md {
   max-width: 440px !important;
-}
-.cropper-container {
-  border-radius: 8px;
-  overflow: hidden;
 }
 
 /* Companion Hex Text Input for Color Pickers */

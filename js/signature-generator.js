@@ -9,8 +9,6 @@
 
 const SignatureGenerator = (() => {
 
-  let currentHoverStyles = [];
-
   /* ─── Template registry ──────────────────────────────────────── */
 
   const TEMPLATES = {
@@ -83,8 +81,6 @@ const SignatureGenerator = (() => {
     const customColor = (options && options.socialIconCustomColor) ? options.socialIconCustomColor : accentColor;
 
     const borderRadius = shape === 'circle' ? '50%' : (shape === 'rounded' ? '4px' : '0px');
-    
-    const hoverStyles = [];
 
     const add = (key, url) => {
       const icon = SOCIAL_ICONS[key];
@@ -103,18 +99,9 @@ const SignatureGenerator = (() => {
         bg = accentColor;
       }
 
-      // Hover state background color
-      let hoverBg = Utils.adjustColor(bg, -30); // Default hover is slightly darker
-      if (options && options[`socialHover_${key}`]) {
-        hoverBg = options[`socialHover_${key}`];
-      }
-
-      const uniqueClass = `ef-social-${key}`;
-      hoverStyles.push(`.${uniqueClass}:hover { background-color: ${hoverBg} !important; }`);
-
       // Use relative path for local Nginx preview, converted to absolute at export time
       const iconUrl = `assets/icons/${key}.png`;
-      links.push(`<a href="${href}" class="${uniqueClass}" target="_blank" rel="noopener" title="${icon.label}" style="display:inline-block;text-align:center;vertical-align:middle;line-height:24px;width:24px;height:24px;border-radius:${borderRadius};background-color:${bg};margin-right:5px;text-decoration:none;transition:background-color 150ms ease-in-out;">
+      links.push(`<a href="${href}" target="_blank" rel="noopener" title="${icon.label}" style="display:inline-block;text-align:center;vertical-align:middle;line-height:24px;width:24px;height:24px;border-radius:${borderRadius};background-color:${bg};margin-right:5px;text-decoration:none;">
   <img src="${iconUrl}" width="13" height="13" alt="${icon.label}" style="display:inline-block;vertical-align:middle;margin:0;border:none;" />
 </a>`);
     };
@@ -132,10 +119,6 @@ const SignatureGenerator = (() => {
     add('pinterest', data.pinterest);
 
     if (!links.length) return '';
-    
-    if (hoverStyles.length) {
-      currentHoverStyles.push(...hoverStyles);
-    }
       
     const sSpacing = (options && options.socialSpacingTop !== undefined) ? options.socialSpacingTop : 10;
     return `<tr><td style="padding-top:${sSpacing}px;">${links.join('')}</td></tr>`;
@@ -305,8 +288,8 @@ const SignatureGenerator = (() => {
             </tr>
             ${data.jobTitle ? `<tr><td style="font-size:${fontSize}px;color:${cJob};font-weight:500;padding-bottom:4px;">${Utils.escapeHtml(data.jobTitle)}${data.company ? ` · <span style="color:${cCompany};">${Utils.escapeHtml(data.company)}</span>` : ''}</td></tr>` : ''}
             ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:${cTagline};font-style:italic;padding-bottom:6px;">${Utils.escapeHtml(data.tagline)}</td></tr>` : ''}
-            ${data.email ? `<tr><td style="font-size:${fontSize - 1}px;color:${cContact};vertical-align:middle;">${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.email)}</a>${data.phone ? ` &nbsp;·&nbsp; ${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.phone)}</a>` : ''}</td></tr>` : ''}
-            ${data.website ? `<tr><td style="font-size:${fontSize - 1}px;padding-top:2px;vertical-align:middle;">${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a></td></tr>` : ''}
+            ${data.email ? `<tr><td style="font-size:${fontSize - 1}px;color:${cContact};vertical-align:middle;">${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.email)}</a>${data.phone ? ` &nbsp;·&nbsp; ${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.phone)}</a>` : ''}</td></tr>` : ''}
+            ${data.website ? `<tr><td style="font-size:${fontSize - 1}px;padding-top:2px;vertical-align:middle;">${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a></td></tr>` : ''}
             ${social}
             ${logoRow(data, options, 'minimal')}
           </tbody>
@@ -348,9 +331,9 @@ const SignatureGenerator = (() => {
             <tr>
               <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:1.8;vertical-align:middle;">
                 ${[
-                  data.email ? `${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.email)}</a>` : '',
-                  data.phone ? `${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.phone)}</a>` : '',
-                  data.website ? `${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
+                  data.email ? `${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.email)}</a>` : '',
+                  data.phone ? `${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.phone)}</a>` : '',
+                  data.website ? `${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
                   data.address ? `${getContactIconHtml('address', options, accentColor)}<span style="color:${cContact};vertical-align:middle;">${Utils.escapeHtml(data.address)}</span>` : '',
                 ].filter(Boolean).join(' &nbsp;|&nbsp; ')}
               </td>
@@ -402,9 +385,9 @@ const SignatureGenerator = (() => {
             <tr>
               <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:2;vertical-align:middle;">
                 ${[
-                  data.email ? `${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;margin-right:12px;vertical-align:middle;">${options.showContactIcons ? '' : '&#9993; '}${Utils.escapeHtml(data.email)}</a>` : '',
-                  data.phone ? `${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;margin-right:12px;vertical-align:middle;">${options.showContactIcons ? '' : '&#128222; '}${Utils.escapeHtml(data.phone)}</a>` : '',
-                  data.website ? `${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${options.showContactIcons ? '' : '&#127758; '}${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
+                  data.email ? `${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" style="color:${cContact};text-decoration:none;margin-right:12px;vertical-align:middle;">${options.showContactIcons ? '' : '&#9993; '}${Utils.escapeHtml(data.email)}</a>` : '',
+                  data.phone ? `${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" style="color:${cContact};text-decoration:none;margin-right:12px;vertical-align:middle;">${options.showContactIcons ? '' : '&#128222; '}${Utils.escapeHtml(data.phone)}</a>` : '',
+                  data.website ? `${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" style="color:${cContact};text-decoration:none;vertical-align:middle;">${options.showContactIcons ? '' : '&#127758; '}${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
                 ].filter(Boolean).join(' ')}
               </td>
             </tr>
@@ -519,9 +502,9 @@ const SignatureGenerator = (() => {
             ${showTagline && data.tagline ? `<tr><td style="font-size:${fontSize - 1}px;color:${cTagline};font-style:italic;padding-bottom:6px;">${Utils.escapeHtml(data.tagline)}</td></tr>` : ''}
             <tr>
               <td style="font-size:${fontSize - 1}px;line-height:${options.contactLineHeight !== undefined ? (options.contactLineHeight / (fontSize - 1)).toFixed(2) : '1.8'};color:${cContact};vertical-align:middle;">
-                ${data.email ? `<span style="vertical-align:middle;">${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.email)}</a></span><br>` : ''}
-                ${data.phone ? `<span style="vertical-align:middle;">${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${options.showContactIcons ? '' : 'T: '}${Utils.escapeHtml(data.phone)}</a></span><br>` : ''}
-                ${data.website ? `<span style="vertical-align:middle;">${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a></span><br>` : ''}
+                ${data.email ? `<span style="vertical-align:middle;">${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.email)}</a></span><br>` : ''}
+                ${data.phone ? `<span style="vertical-align:middle;">${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" style="color:${cContact};text-decoration:none;vertical-align:middle;">${options.showContactIcons ? '' : 'T: '}${Utils.escapeHtml(data.phone)}</a></span><br>` : ''}
+                ${data.website ? `<span style="vertical-align:middle;">${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a></span><br>` : ''}
                 ${data.address ? `<span style="vertical-align:middle;">${getContactIconHtml('address', options, accentColor)}<span style="color:${cContact};opacity:0.8;vertical-align:middle;">${Utils.escapeHtml(data.address)}</span></span>` : ''}
               </td>
             </tr>
@@ -573,9 +556,9 @@ const SignatureGenerator = (() => {
                     <tr>
                       <td style="font-size:${fontSize - 1}px;color:${cContact};line-height:1.9;letter-spacing:0.01em;vertical-align:middle;">
                         ${[
-                          data.email ? `${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.email)}</a>` : '',
-                          data.phone ? `${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.phone)}</a>` : '',
-                          data.website ? `${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
+                          data.email ? `${getContactIconHtml('email', options, accentColor)}<a href="mailto:${data.email}" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.email)}</a>` : '',
+                          data.phone ? `${getContactIconHtml('phone', options, accentColor)}<a href="tel:${data.phone}" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.phone)}</a>` : '',
+                          data.website ? `${getContactIconHtml('website', options, accentColor)}<a href="${Utils.normaliseUrl(data.website)}" style="color:${cContact};text-decoration:none;vertical-align:middle;">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>` : '',
                           data.address ? `${getContactIconHtml('address', options, accentColor)}<span style="color:${cContact};opacity:0.8;vertical-align:middle;">${Utils.escapeHtml(data.address)}</span>` : '',
                         ].filter(Boolean).join(' &nbsp;·&nbsp; ')}
                       </td>
@@ -646,21 +629,21 @@ const SignatureGenerator = (() => {
             <tr style="vertical-align:middle" height="${contactsLineH}">
               ${options.showContactIcons ? `<td width="22" style="vertical-align:middle;">${getContactIconHtml('phone', options, accentColor)}</td>` : ''}
               <td style="padding:0px;color:${cContact};vertical-align:middle;">
-                <a href="tel:${data.phone}" class="ef-contact-link" style="text-decoration:none;color:${cContact};font-size:${fontSize}px;" target="_blank">${Utils.escapeHtml(data.phone)}</a>
+                <a href="tel:${data.phone}" style="text-decoration:none;color:${cContact};font-size:${fontSize}px;" target="_blank">${Utils.escapeHtml(data.phone)}</a>
               </td>
             </tr>` : ''}
           ${data.email ? `
             <tr style="vertical-align:middle" height="${contactsLineH}">
               ${options.showContactIcons ? `<td width="22" style="vertical-align:middle;">${getContactIconHtml('email', options, accentColor)}</td>` : ''}
               <td style="padding:0px;color:${cContact};vertical-align:middle;">
-                <a href="mailto:${data.email}" class="ef-contact-link" style="text-decoration:none;color:${cContact};font-size:${fontSize}px;" target="_blank">${Utils.escapeHtml(data.email)}</a>
+                <a href="mailto:${data.email}" style="text-decoration:none;color:${cContact};font-size:${fontSize}px;" target="_blank">${Utils.escapeHtml(data.email)}</a>
               </td>
             </tr>` : ''}
           ${data.website ? `
             <tr style="vertical-align:middle" height="${contactsLineH}">
               ${options.showContactIcons ? `<td width="22" style="vertical-align:middle;">${getContactIconHtml('website', options, accentColor)}</td>` : ''}
               <td style="padding:0px;color:${cContact};vertical-align:middle;">
-                <a href="${Utils.normaliseUrl(data.website)}" class="ef-contact-link" style="text-decoration:none;color:${cContact};font-size:${fontSize}px;" target="_blank">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>
+                <a href="${Utils.normaliseUrl(data.website)}" style="text-decoration:none;color:${cContact};font-size:${fontSize}px;" target="_blank">${Utils.escapeHtml(data.website.replace(/^https?:\/\//, ''))}</a>
               </td>
             </tr>` : ''}
           ${data.address ? `
@@ -747,12 +730,6 @@ const SignatureGenerator = (() => {
    * @returns {string}        — HTML string
    */
   function generate(data, options) {
-    currentHoverStyles = []; // Reset for this generation
-
-    const hoverContactColor = options.colorContactHover || '#6366f1';
-    currentHoverStyles.push(`.ef-contact-link { transition: color 150ms ease-in-out; }`);
-    currentHoverStyles.push(`.ef-contact-link:hover { color: ${hoverContactColor} !important; }`);
-
     const template = options.template || 'minimal';
     let html = '';
     switch (template) {
@@ -784,10 +761,6 @@ const SignatureGenerator = (() => {
       html = html + disclaimerHtml;
     }
 
-    if (currentHoverStyles.length > 0) {
-      const styleBlock = `<style type="text/css">\n${currentHoverStyles.join('\n')}\n</style>\n`;
-      html = styleBlock + html;
-    }
     return html;
   }
 

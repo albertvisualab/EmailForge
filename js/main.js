@@ -34,7 +34,7 @@ const DEFAULT_PROFILE = {
   data: {
     firstName: '', lastName: '', jobTitle: '', department: '',
     company: '', website: '', email: '', phone: '', address: '',
-    tagline: '', avatar: null, originalAvatar: null, logo: null, originalLogo: null,
+    tagline: '', avatar: null, logo: null,
     logoUrl: '', avatarExternalUrl: '', logoExternalUrl: '',
     linkedin: '', twitter: '', instagram: '', github: '',
     dribbble: '', youtube: '', calendly: '', whatsapp: '',
@@ -60,7 +60,6 @@ const DEFAULT_PROFILE = {
     colorJobTitle: '#6366f1',
     colorCompany: '#666666',
     colorContact: '#666666',
-    colorContactHover: '#6366f1',
     colorTagline: '#999999',
     colorDisclaimer: '#969696',
     disclaimerSize: 10,
@@ -135,11 +134,9 @@ function readFormData() {
     const el = document.getElementById(f);
     data[f] = el ? el.value.trim() : '';
   });
-  // Avatar and logo are stored separately (base64)
+  // Avatar and logo are stored separately
   data.avatar = State.active?.data?.avatar || null;
-  data.originalAvatar = State.active?.data?.originalAvatar || null;
   data.logo = State.active?.data?.logo || null;
-  data.originalLogo = State.active?.data?.originalLogo || null;
   return data;
 }
 
@@ -165,7 +162,6 @@ function readOptions() {
     colorJobTitle: document.getElementById('colorJobTitle')?.value || '#6366f1',
     colorCompany: document.getElementById('colorCompany')?.value || '#666666',
     colorContact: document.getElementById('colorContact')?.value || '#666666',
-    colorContactHover: document.getElementById('colorContactHover')?.value || '#6366f1',
     colorTagline: document.getElementById('colorTagline')?.value || '#999999',
     colorDisclaimer: document.getElementById('colorDisclaimer')?.value || '#969696',
     disclaimerSize: parseInt(document.getElementById('disclaimerSize')?.value || 10),
@@ -238,24 +234,24 @@ function populateForm(profile) {
 
   // Avatar preview
   if (data.avatarExternalUrl) {
-    setAvatarPreview(data.avatarExternalUrl, true);
+    setAvatarPreview(data.avatarExternalUrl);
   } else if (data.avatar) {
-    setAvatarPreview(data.avatar, false);
+    setAvatarPreview(data.avatar);
   } else {
     clearAvatarPreview();
   }
 
   // Logo preview
   if (data.logoExternalUrl) {
-    setLogoPreview(data.logoExternalUrl, true);
+    setLogoPreview(data.logoExternalUrl);
   } else if (data.logo) {
-    setLogoPreview(data.logo, false);
+    setLogoPreview(data.logo);
   } else {
     clearLogoPreview();
   }
 
   // Custom typography colors
-  const colorFields = ['colorName', 'colorJobTitle', 'colorCompany', 'colorContact', 'colorContactHover', 'colorTagline', 'colorDisclaimer'];
+  const colorFields = ['colorName', 'colorJobTitle', 'colorCompany', 'colorContact', 'colorTagline', 'colorDisclaimer'];
   colorFields.forEach(f => {
     const el = document.getElementById(f);
     if (el) el.value = options[f] || DEFAULT_PROFILE.options[f];
@@ -406,25 +402,38 @@ const renderSignature = Utils.debounce(function () {
     return;
   }
 
-  // Merge avatar & logo from state/inputs (external URL takes precedence over base64)
-  data.avatar     = data.avatarExternalUrl || State.active?.data?.avatar || null;
+  // If URL is empty, clear the saved avatar/logo to allow removing them
+  if (!data.avatarExternalUrl) {
+    if (State.active?.data) {
+      State.active.data.avatar = null;
+      State.active.data.originalAvatar = null;
+    }
+    data.avatar = null;
+  } else {
+    data.avatar = data.avatarExternalUrl;
+  }
   data.showAvatar = options.showAvatar;
-  data.logo       = data.logoExternalUrl || State.active?.data?.logo || null;
+
+  if (!data.logoExternalUrl) {
+    if (State.active?.data) {
+      State.active.data.logo = null;
+      State.active.data.originalLogo = null;
+    }
+    data.logo = null;
+  } else {
+    data.logo = data.logoExternalUrl;
+  }
   data.showLogo   = options.showLogo;
 
-  // Update UI Previews based on presence of external URL or fallback base64
-  if (data.avatarExternalUrl) {
-    setAvatarPreview(data.avatarExternalUrl, true);
-  } else if (State.active?.data?.avatar) {
-    setAvatarPreview(State.active.data.avatar, false);
+  // Update UI Previews
+  if (data.avatar) {
+    setAvatarPreview(data.avatar);
   } else {
     clearAvatarPreview();
   }
 
-  if (data.logoExternalUrl) {
-    setLogoPreview(data.logoExternalUrl, true);
-  } else if (State.active?.data?.logo) {
-    setLogoPreview(State.active.data.logo, false);
+  if (data.logo) {
+    setLogoPreview(data.logo);
   } else {
     clearLogoPreview();
   }
@@ -700,226 +709,26 @@ function activateTab(tabId) {
   });
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   AVATAR & LOGO UPLOAD (WITH CROPPER.JS)
-   ══════════════════════════════════════════════════════════════════ */
-
-function initImageCropper() {
-  const cropModal = document.getElementById('cropModalOverlay');
-  const cropImgSrc = document.getElementById('cropImageSource');
-  const cancelBtn = document.getElementById('cancelCropModal');
-  const saveBtn = document.getElementById('saveCropModal');
-  
-  const avatarInput = document.getElementById('avatarUpload');
-  const avatarRemoveBtn = document.getElementById('removeAvatar');
-  const avatarCropBtn = document.getElementById('cropAvatarBtn');
-  
-  const logoInput = document.getElementById('logoUpload');
-  const logoRemoveBtn = document.getElementById('removeLogo');
-  const logoCropBtn = document.getElementById('cropLogoBtn');
-
-  let activeCropper = null;
-  let cropTarget = null; // 'avatar' | 'logo'
-
-  // Helper to open modal and start cropper
-  function openCropModal(imageSrc, target) {
-    cropTarget = target;
-    cropImgSrc.src = imageSrc;
-    cropModal.hidden = false;
-    
-    if (activeCropper) {
-      activeCropper.destroy();
-      activeCropper = null;
-    }
-    
-    const aspectRatio = target === 'avatar' ? 1 : NaN;
-    
-    // Tiny delay to ensure modal display completes
-    setTimeout(() => {
-      activeCropper = new Cropper(cropImgSrc, {
-        aspectRatio: aspectRatio,
-        viewMode: 1,
-        autoCropArea: 0.95,
-        responsive: true,
-        restore: false,
-        checkOrientation: false,
-      });
-    }, 50);
-  }
-
-  // Avatar Upload Handler
-  if (avatarInput) {
-    avatarInput.addEventListener('change', async e => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      if (file.size > 2 * 1024 * 1024) {
-        Utils.showToast('⚠ Image too large — please use an image under 2 MB.');
-        return;
-      }
-      try {
-        const dataUrl = await Utils.readFileAsDataURL(file);
-        if (State.active) {
-          State.active.data.originalAvatar = dataUrl;
-        }
-        openCropModal(dataUrl, 'avatar');
-        avatarInput.value = '';
-      } catch {
-        Utils.showToast('⚠ Could not read image file.');
-      }
-    });
-  }
-
-  // Logo Upload Handler
-  if (logoInput) {
-    logoInput.addEventListener('change', async e => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      if (file.size > 2 * 1024 * 1024) {
-        Utils.showToast('⚠ Image too large — please use an image under 2 MB.');
-        return;
-      }
-      try {
-        const dataUrl = await Utils.readFileAsDataURL(file);
-        if (State.active) {
-          State.active.data.originalLogo = dataUrl;
-        }
-        openCropModal(dataUrl, 'logo');
-        logoInput.value = '';
-      } catch {
-        Utils.showToast('⚠ Could not read image file.');
-      }
-    });
-  }
-
-  // Manual Crop Button Clicks
-  if (avatarCropBtn) {
-    avatarCropBtn.addEventListener('click', () => {
-      const original = State.active?.data?.originalAvatar || State.active?.data?.avatar;
-      if (original) {
-        openCropModal(original, 'avatar');
-      }
-    });
-  }
-
-  if (logoCropBtn) {
-    logoCropBtn.addEventListener('click', () => {
-      const original = State.active?.data?.originalLogo || State.active?.data?.logo;
-      if (original) {
-        openCropModal(original, 'logo');
-      }
-    });
-  }
-
-  // Remove buttons
-  if (avatarRemoveBtn) {
-    avatarRemoveBtn.addEventListener('click', () => {
-      clearAvatarPreview();
-      const urlInput = document.getElementById('avatarExternalUrl');
-      if (urlInput) urlInput.value = '';
-      if (State.active) {
-        State.active.data.avatar = null;
-        State.active.data.originalAvatar = null;
-        State.active.data.avatarExternalUrl = '';
-      }
-      renderSignature();
-    });
-  }
-
-  if (logoRemoveBtn) {
-    logoRemoveBtn.addEventListener('click', () => {
-      clearLogoPreview();
-      const urlInput = document.getElementById('logoExternalUrl');
-      if (urlInput) urlInput.value = '';
-      if (State.active) {
-        State.active.data.logo = null;
-        State.active.data.originalLogo = null;
-        State.active.data.logoExternalUrl = '';
-      }
-      renderSignature();
-    });
-  }
-
-  // Close modal
-  function closeCropModal() {
-    cropModal.hidden = true;
-    if (activeCropper) {
-      activeCropper.destroy();
-      activeCropper = null;
-    }
-  }
-
-  if (cancelBtn) cancelBtn.addEventListener('click', closeCropModal);
-  if (cropModal) {
-    cropModal.addEventListener('click', e => {
-      if (e.target === cropModal) closeCropModal();
-    });
-  }
-
-  // Apply Crop and Save
-  if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
-      if (!activeCropper) return;
-      const canvas = activeCropper.getCroppedCanvas({
-        maxWidth: 500,
-        maxHeight: 500,
-        imageSmoothingEnabled: true,
-        imageSmoothingQuality: 'high',
-      });
-      const mimeType = cropTarget === 'logo' ? 'image/png' : 'image/jpeg';
-      const croppedUrl = canvas.toDataURL(mimeType, mimeType === 'image/jpeg' ? 0.95 : undefined);
-
-      if (State.active) {
-        if (cropTarget === 'avatar') {
-          State.active.data.avatar = croppedUrl;
-          setAvatarPreview(croppedUrl);
-        } else if (cropTarget === 'logo') {
-          State.active.data.logo = croppedUrl;
-          setLogoPreview(croppedUrl);
-        }
-      }
-
-      renderSignature();
-      closeCropModal();
-    });
-  }
-}
-
-function setAvatarPreview(dataUrl, isExternal = false) {
-  const preview   = document.getElementById('avatarPreview');
-  const removeBtn = document.getElementById('removeAvatar');
-  const cropBtn   = document.getElementById('cropAvatarBtn');
+function setAvatarPreview(dataUrl) {
+  const preview = document.getElementById('avatarPreview');
   if (!preview) return;
-  preview.innerHTML = `<img src="${dataUrl}" alt="Avatar preview" />`;
-  if (removeBtn) removeBtn.style.display = 'inline-flex';
-  if (cropBtn) cropBtn.style.display = isExternal ? 'none' : 'inline-flex';
+  preview.innerHTML = `<img src="${dataUrl}" alt="Avatar preview" style="object-fit: cover; width: 100%; height: 100%;" />`;
 }
 
 function clearAvatarPreview() {
-  const preview   = document.getElementById('avatarPreview');
-  const removeBtn = document.getElementById('removeAvatar');
-  const cropBtn   = document.getElementById('cropAvatarBtn');
+  const preview = document.getElementById('avatarPreview');
   if (preview) preview.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M4 20c0-4.418 3.582-7 8-7s8 2.582 8 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
-  if (removeBtn) removeBtn.style.display = 'none';
-  if (cropBtn) cropBtn.style.display = 'none';
 }
 
-function setLogoPreview(dataUrl, isExternal = false) {
+function setLogoPreview(dataUrl) {
   const preview = document.getElementById('logoPreview');
-  const removeBtn = document.getElementById('removeLogo');
-  const cropBtn = document.getElementById('cropLogoBtn');
   if (!preview) return;
   preview.innerHTML = `<img src="${dataUrl}" alt="Logo preview" style="object-fit: contain; width: 100%; height: 100%;" />`;
-  if (removeBtn) removeBtn.style.display = 'inline-flex';
-  if (cropBtn) cropBtn.style.display = isExternal ? 'none' : 'inline-flex';
 }
 
 function clearLogoPreview() {
   const preview = document.getElementById('logoPreview');
-  const removeBtn = document.getElementById('removeLogo');
-  const cropBtn = document.getElementById('cropLogoBtn');
   if (preview) preview.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 17L10 12L13 15L17 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  if (removeBtn) removeBtn.style.display = 'none';
-  if (cropBtn) cropBtn.style.display = 'none';
 }
 
 function toggleSocialCustomColorRow(show) {
@@ -1170,7 +979,7 @@ function bindFormInputs() {
 
   // All custom color pickers (typography & avatar border & individual social colors)
   const socialKeys = ['linkedin', 'twitter', 'instagram', 'github', 'dribbble', 'youtube', 'calendly', 'whatsapp', 'behance', 'substack', 'pinterest'];
-  const allColorPickers = ['colorName', 'colorJobTitle', 'colorCompany', 'colorContact', 'colorContactHover', 'colorTagline', 'colorDisclaimer', 'avatarBorderColor', 'socialIconCustomColor', 'contactIconColor'];
+  const allColorPickers = ['colorName', 'colorJobTitle', 'colorCompany', 'colorContact', 'colorTagline', 'colorDisclaimer', 'avatarBorderColor', 'socialIconCustomColor', 'contactIconColor'];
   socialKeys.forEach(key => {
     allColorPickers.push(`socialColor_${key}`);
     allColorPickers.push(`socialHover_${key}`);
@@ -1613,7 +1422,6 @@ function boot() {
   initTabs();
   bindFormInputs();
   initColorPickersHexCompanion();
-  initImageCropper();
   initProfileDropdown();
   initModal();
   initCopyUtils();
