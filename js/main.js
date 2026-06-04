@@ -85,18 +85,18 @@ const DEFAULT_PROFILE = {
     socialIconShape: 'circle',
     socialIconCustomColor: '#6366f1',
     
-    // Individual social normal/hover colors
-    socialColor_linkedin: '#0A66C2', socialHover_linkedin: '#004b93',
-    socialColor_twitter: '#000000', socialHover_twitter: '#222222',
-    socialColor_instagram: '#E4405F', socialHover_instagram: '#c13584',
-    socialColor_github: '#181717', socialHover_github: '#404040',
-    socialColor_dribbble: '#EA4C89', socialHover_dribbble: '#c32361',
-    socialColor_youtube: '#FF0000', socialHover_youtube: '#b30000',
-    socialColor_calendly: '#006BFF', socialHover_calendly: '#004b93',
-    socialColor_whatsapp: '#25D366', socialHover_whatsapp: '#128C7E',
-    socialColor_behance: '#1769ff', socialHover_behance: '#004fd1',
-    socialColor_substack: '#FF6719', socialHover_substack: '#d9520e',
-    socialColor_pinterest: '#BD081C', socialHover_pinterest: '#990012',
+    // Individual social normal colors
+    socialColor_linkedin: '#0A66C2',
+    socialColor_twitter: '#000000',
+    socialColor_instagram: '#E4405F',
+    socialColor_github: '#181717',
+    socialColor_dribbble: '#EA4C89',
+    socialColor_youtube: '#FF0000',
+    socialColor_calendly: '#006BFF',
+    socialColor_whatsapp: '#25D366',
+    socialColor_behance: '#1769ff',
+    socialColor_substack: '#FF6719',
+    socialColor_pinterest: '#BD081C',
   },
 };
 
@@ -187,29 +187,18 @@ function readOptions() {
     socialIconShape: document.getElementById('socialIconShape')?.value || 'circle',
     socialIconCustomColor: document.getElementById('socialIconCustomColor')?.value || '#6366f1',
     
-    // Individual social normal/hover colors
+    // Individual social normal colors
     socialColor_linkedin: document.getElementById('socialColor_linkedin')?.value || '#0A66C2',
-    socialHover_linkedin: document.getElementById('socialHover_linkedin')?.value || '#004b93',
     socialColor_twitter: document.getElementById('socialColor_twitter')?.value || '#000000',
-    socialHover_twitter: document.getElementById('socialHover_twitter')?.value || '#222222',
     socialColor_instagram: document.getElementById('socialColor_instagram')?.value || '#E4405F',
-    socialHover_instagram: document.getElementById('socialHover_instagram')?.value || '#c13584',
     socialColor_github: document.getElementById('socialColor_github')?.value || '#181717',
-    socialHover_github: document.getElementById('socialHover_github')?.value || '#404040',
     socialColor_dribbble: document.getElementById('socialColor_dribbble')?.value || '#EA4C89',
-    socialHover_dribbble: document.getElementById('socialHover_dribbble')?.value || '#c32361',
     socialColor_youtube: document.getElementById('socialColor_youtube')?.value || '#FF0000',
-    socialHover_youtube: document.getElementById('socialHover_youtube')?.value || '#b30000',
     socialColor_calendly: document.getElementById('socialColor_calendly')?.value || '#006BFF',
-    socialHover_calendly: document.getElementById('socialHover_calendly')?.value || '#004b93',
     socialColor_whatsapp: document.getElementById('socialColor_whatsapp')?.value || '#25D366',
-    socialHover_whatsapp: document.getElementById('socialHover_whatsapp')?.value || '#128C7E',
     socialColor_behance: document.getElementById('socialColor_behance')?.value || '#1769ff',
-    socialHover_behance: document.getElementById('socialHover_behance')?.value || '#004fd1',
     socialColor_substack: document.getElementById('socialColor_substack')?.value || '#FF6719',
-    socialHover_substack: document.getElementById('socialHover_substack')?.value || '#d9520e',
     socialColor_pinterest: document.getElementById('socialColor_pinterest')?.value || '#BD081C',
-    socialHover_pinterest: document.getElementById('socialHover_pinterest')?.value || '#990012',
   };
 }
 
@@ -357,9 +346,6 @@ function populateForm(profile) {
   socialKeys.forEach(key => {
     const normalInput = document.getElementById(`socialColor_${key}`);
     if (normalInput) normalInput.value = options[`socialColor_${key}`] || DEFAULT_PROFILE.options[`socialColor_${key}`];
-    
-    const hoverInput = document.getElementById(`socialHover_${key}`);
-    if (hoverInput) hoverInput.value = options[`socialHover_${key}`] || DEFAULT_PROFILE.options[`socialHover_${key}`];
   });
 
   const toggles = ['showDivider','showAvatar','showLogo','showIcons','showTagline','showDisclaimer','showContactIcons'];
@@ -472,9 +458,6 @@ function loadProfiles() {
       newKeys.forEach(key => {
         if (profile.options[`socialColor_${key}`] === undefined || profile.options[`socialColor_${key}`] === null || profile.options[`socialColor_${key}`] === '') {
           profile.options[`socialColor_${key}`] = DEFAULT_PROFILE.options[`socialColor_${key}`];
-        }
-        if (profile.options[`socialHover_${key}`] === undefined || profile.options[`socialHover_${key}`] === null || profile.options[`socialHover_${key}`] === '') {
-          profile.options[`socialHover_${key}`] = DEFAULT_PROFILE.options[`socialHover_${key}`];
         }
       });
       
@@ -982,7 +965,6 @@ function bindFormInputs() {
   const allColorPickers = ['colorName', 'colorJobTitle', 'colorCompany', 'colorContact', 'colorTagline', 'colorDisclaimer', 'avatarBorderColor', 'socialIconCustomColor', 'contactIconColor'];
   socialKeys.forEach(key => {
     allColorPickers.push(`socialColor_${key}`);
-    allColorPickers.push(`socialHover_${key}`);
   });
 
   allColorPickers.forEach(id => {
@@ -1301,9 +1283,37 @@ function initBackupActions() {
           const isValid = Array.isArray(parsed) && parsed.length > 0 && parsed.every(p => p.id && p.name && p.data && p.options);
           
           if (isValid) {
-            State.profiles = parsed;
+            // Validate, sanitize and fill defaults for all imported profiles
+            State.profiles = parsed.map(profile => {
+              profile.data = { ...DEFAULT_PROFILE.data, ...profile.data };
+              profile.options = { ...DEFAULT_PROFILE.options, ...profile.options };
+              
+              const newKeys = ['behance', 'substack', 'pinterest'];
+              newKeys.forEach(key => {
+                if (profile.options[`socialColor_${key}`] === undefined || profile.options[`socialColor_${key}`] === null || profile.options[`socialColor_${key}`] === '') {
+                  profile.options[`socialColor_${key}`] = DEFAULT_PROFILE.options[`socialColor_${key}`];
+                }
+              });
+              
+              if (profile.data.disclaimer === undefined || profile.data.disclaimer === null || profile.data.disclaimer === '') {
+                profile.data.disclaimer = DEFAULT_PROFILE.data.disclaimer;
+              }
+              if (profile.options.disclaimerSize === undefined) {
+                profile.options.disclaimerSize = 10;
+              }
+              if (profile.options.disclaimerSpacingTop === undefined) {
+                profile.options.disclaimerSpacingTop = 10;
+              }
+              if (profile.options.showContactIcons === undefined) {
+                profile.options.showContactIcons = false;
+              }
+              if (profile.options.contactIconShape === undefined) {
+                profile.options.contactIconShape = 'square';
+              }
+              return profile;
+            });
             // Select the first imported profile as active
-            State.activeId = parsed[0].id;
+            State.activeId = State.profiles[0].id;
             saveProfiles();
             
             // Repopulate form and re-render everything completely
